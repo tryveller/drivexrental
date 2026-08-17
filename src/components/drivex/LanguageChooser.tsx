@@ -26,10 +26,6 @@ export function LanguageChooser({
         <h2 className="mt-2 text-xl font-semibold tracking-tight">
           {tIn(pending, "confirmLangTitle")}
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          {tIn(pending, "confirmLangBody")}
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">{tIn(pending, "languageNote")}</p>
         <div className="mt-5 space-y-2">
           <Button
             className="h-12 w-full text-base"
