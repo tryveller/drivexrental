@@ -100,6 +100,41 @@ const DICT = {
     hi: "आपके पास बाइक ढूंढ रहे हैं…",
     kn: "ನಿಮ್ಮ ಹತ್ತಿರ ಬೈಕ್ ಹುಡುಕುತ್ತಿದ್ದೇವೆ…",
   },
+  locationTitle: {
+    en: "Where do you want to ride?",
+    hi: "आप कहाँ राइड करना चाहते हैं?",
+    kn: "ನೀವು ಎಲ್ಲಿ ರೈಡ್ ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
+  },
+  locationIntro: {
+    en: "Share your location or pick your area, and we'll show the bikes and hubs closest to you.",
+    hi: "अपनी लोकेशन दें या क्षेत्र चुनें, हम आपके सबसे नज़दीकी बाइक और हब दिखाएंगे।",
+    kn: "ನಿಮ್ಮ ಲೊಕೇಶನ್ ಹಂಚಿಕೊಳ್ಳಿ ಅಥವಾ ಪ್ರದೇಶ ಆಯ್ಕೆ ಮಾಡಿ, ಹತ್ತಿರದ ಬೈಕ್ ಮತ್ತು ಹಬ್ ತೋರಿಸುತ್ತೇವೆ.",
+  },
+  pickArea: {
+    en: "Or pick your area",
+    hi: "या अपना क्षेत्र चुनें",
+    kn: "ಅಥವಾ ನಿಮ್ಮ ಪ್ರದೇಶ ಆಯ್ಕೆ ಮಾಡಿ",
+  },
+  continueLabel: {
+    en: "Continue",
+    hi: "आगे बढ़ें",
+    kn: "ಮುಂದುವರಿಯಿರಿ",
+  },
+  changeLocation: {
+    en: "Change location",
+    hi: "लोकेशन बदलें",
+    kn: "ಲೊಕೇಶನ್ ಬದಲಿಸಿ",
+  },
+  bannerHeadline: {
+    en: "Your next ride starts today",
+    hi: "आपकी अगली राइड आज से",
+    kn: "ನಿಮ್ಮ ಮುಂದಿನ ರೈಡ್ ಇಂದೇ ಆರಂಭ",
+  },
+  bannerSub: {
+    en: "Reserve for ₹199, verify at the hub, ride away the same day.",
+    hi: "₹199 में रिज़र्व करें, हब पर वेरिफाई करें, उसी दिन राइड करें।",
+    kn: "₹199 ಪಾವತಿಸಿ ಕಾಯ್ದಿರಿಸಿ, ಹಬ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ, ಅದೇ ದಿನ ರೈಡ್ ಮಾಡಿ.",
+  },
   // auth
   verifyTitle: {
     en: "Verify your mobile number",
