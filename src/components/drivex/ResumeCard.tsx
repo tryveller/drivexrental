@@ -25,7 +25,10 @@ export function ResumeCard({
   onOpen: () => void;
 }) {
   const { t } = useLanguage();
-  const bike = [booking.modelBrand, booking.modelName].filter(Boolean).join(" ");
+  const name = booking.modelName ?? "";
+  const brand = booking.modelBrand ?? "";
+  // Some model names already carry the brand ("TVS Radeon") — don't repeat it.
+  const bike = name.startsWith(brand) ? name : [brand, name].filter(Boolean).join(" ");
 
   return (
     <button
