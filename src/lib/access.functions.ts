@@ -6,7 +6,7 @@ export const getGateStatus = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const checkGateToken = createServerFn({ method: "POST" })
-  .inputValidator((input: { token?: string }) => input)
+  .inputValidator((input: { token?: string | undefined }) => input)
   .handler(async ({ data }) => {
     const { gateEnabled, tokenValid } = await import("./access.server");
     if (!gateEnabled()) return { enabled: false, unlocked: true };
