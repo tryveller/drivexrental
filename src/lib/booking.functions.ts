@@ -126,6 +126,9 @@ export const submitEligibility = createServerFn({ method: "POST" })
       dlName: string;
       dlDob: string;
       selfieCaptured: boolean;
+      selfiePath?: string | null;
+      dlFrontPath?: string | null;
+      dlBackPath?: string | null;
       consent: boolean;
       method: "DIGITAL" | "UPLOAD";
     }) => input,
@@ -136,7 +139,7 @@ export const submitEligibility = createServerFn({ method: "POST" })
     const { track } = await import("./drivex.server");
 
     const dl = data.dlNumber.toUpperCase().replace(/[-\s]/g, "");
-    const validDl = /^[A-Z]{2}[0-9]{13}$/.test(dl);
+    const validDl = isLikelyDl(dl);
     const result = validDl && data.selfieCaptured ? "LIKELY_ELIGIBLE" : "ADDITIONAL_VERIFICATION";
 
     await supabaseAdmin.from("kyc_cases").upsert(
@@ -149,6 +152,9 @@ export const submitEligibility = createServerFn({ method: "POST" })
         dl_dob: data.dlDob || null,
         dl_verified: data.method === "DIGITAL" && validDl,
         selfie_captured: data.selfieCaptured,
+        selfie_path: data.selfiePath ?? null,
+        dl_front_path: data.dlFrontPath ?? null,
+        dl_back_path: data.dlBackPath ?? null,
         eligibility_result: result,
         consent_version: "v1.0",
         consent_text:
@@ -360,6 +366,10 @@ export const submitHubKyc = createServerFn({ method: "POST" })
       dlName: string;
       addressProof: string;
       selfieCaptured: boolean;
+      selfiePath?: string | null;
+      dlFrontPath?: string | null;
+      dlBackPath?: string | null;
+      addressProofPath?: string | null;
     }) => input,
   )
   .handler(async ({ data, context }) => {
@@ -367,9 +377,13 @@ export const submitHubKyc = createServerFn({ method: "POST" })
     const { track } = await import("./drivex.server");
 
     const dl = data.dlNumber.toUpperCase().replace(/[-\s]/g, "");
-    const validDl = /^[A-Z]{2}[0-9]{13}$/.test(dl);
+    const validDl = isLikelyDl(dl);
     const complete =
-      Boolean(data.dlName.trim()) && Boolean(data.addressProof) && data.selfieCaptured;
+      Boolean(data.dlName.trim()) &&
+      Boolean(data.addressProof) &&
+      Boolean(data.selfiePath) &&
+      Boolean(data.dlFrontPath) &&
+      Boolean(data.addressProofPath);
 
     if (!validDl || !complete) {
       await supabaseAdmin
@@ -392,6 +406,11 @@ export const submitHubKyc = createServerFn({ method: "POST" })
         dl_name: data.dlName,
         dl_verified: true,
         selfie_captured: true,
+        selfie_path: data.selfiePath ?? null,
+        dl_front_path: data.dlFrontPath ?? null,
+        dl_back_path: data.dlBackPath ?? null,
+        address_proof_path: data.addressProofPath ?? null,
+        address_proof_type: data.addressProof,
         address_proof_status: "VERIFIED",
         action_required_reason: null,
       })
