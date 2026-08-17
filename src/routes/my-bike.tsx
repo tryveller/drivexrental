@@ -31,6 +31,7 @@ import {
 } from "@/lib/rental.functions";
 import { SERVICE_INTERVAL_DAYS, SERVICE_INTERVAL_KM } from "@/lib/pricing";
 import { longDate, modelTitle, rupees, shortDate } from "@/lib/format";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/my-bike")({
   head: () => ({
@@ -53,6 +54,7 @@ export const Route = createFileRoute("/my-bike")({
 
 function MyBikePage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const session = useRiderSession();
   const queryClient = useQueryClient();
 
@@ -72,7 +74,7 @@ function MyBikePage() {
     return (
       <AppShell subtitle="My Bike">
         <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading your bike…
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loadingBike")}
         </div>
       </AppShell>
     );
@@ -85,9 +87,7 @@ function MyBikePage() {
         <div className="rounded-2xl border border-border bg-card p-6 text-center">
           <Bike className="mx-auto h-8 w-8 text-primary" />
           <h1 className="mt-3 text-lg font-semibold">No active rental yet</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Once you collect a bike from the hub, everything about it shows up here.
-          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("noRental")}</p>
           <Button className="mt-4" onClick={() => navigate({ to: "/journey" })}>
             View my booking
           </Button>
@@ -266,8 +266,8 @@ function MyBikePage() {
         <TabsContent value="return" className="space-y-4">
           <Card icon={<Bike className="h-5 w-5 text-primary" />} title="Return your bike">
             <p className="text-sm text-muted-foreground">
-              Return to {hub?.name ?? "your hub"}. We'll inspect the bike with you and compare it
-              against the photos taken at handover.
+              {hub?.name ? `${hub.name} · ` : ""}
+              {t("returnHint")}
             </p>
             <dl className="mt-3 space-y-1.5 text-sm">
               <Row label="Refundable security deposit" value={rupees(plan.deposit_amount)} />
@@ -281,7 +281,7 @@ function MyBikePage() {
               />
             </dl>
             <p className="mt-3 text-xs text-muted-foreground">
-              Damage charges, if any, are added after the return inspection.
+              {t("damageNote")}
             </p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               {rental.status === "ACTIVE" ? (
