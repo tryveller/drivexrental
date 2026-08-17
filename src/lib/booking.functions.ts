@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const BOOKING_SELECT =
-  "id, booking_code, status, hub_id, model_id, plan_id, vehicle_id, reservation_expires_at, travel_mode, rapido_coupon, checked_in_at, agreement_accepted_at, handover_confirmed_at, rejection_reason, created_at";
+  "id, booking_code, status, hub_id, model_id, plan_id, vehicle_id, reservation_expires_at, travel_mode, rapido_coupon, checked_in_at, agreement_accepted_at, handover_confirmed_at, rejection_reason, created_at, pickup_on, pickup_slot, dropoff_on, dropoff_slot, billed_days, billed_extra_hours, quoted_total, pickup_change_count, original_pickup_on";
 
 const LOCKED_STATUSES = [
   "RESERVED",
@@ -20,10 +20,54 @@ const LOCKED_STATUSES = [
 
 export const createBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { modelId: string; hubId: string; planId: string }) => input)
+  .inputValidator(
+    (input: {
+      modelId: string;
+      hubId: string;
+      planId: string;
+      pickupOn?: string;
+      pickupSlot?: string;
+      dropoffOn?: string;
+      dropoffSlot?: string;
+    }) => input,
+  )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
+    const { buildQuote, computeDuration, isSlotKey } = await import("./pricing");
+
+    // The server owns the quote: dates come from the rider, amounts never do.
+    const pickupSlot = isSlotKey(data.pickupSlot) ? data.pickupSlot : "MORNING";
+    const dropoffSlot = isSlotKey(data.dropoffSlot) ? data.dropoffSlot : "EVENING";
+    const duration = computeDuration(
+      data.pickupOn ?? null,
+      pickupSlot,
+      data.dropoffOn ?? null,
+      dropoffSlot,
+    );
+
+    let dateFields: Record<string, unknown> = {};
+    if (duration && data.pickupOn && data.dropoffOn) {
+      const { data: plan } = await supabaseAdmin
+        .from("plans")
+        .select("*")
+        .eq("id", data.planId)
+        .single();
+      const quote = plan
+        ? buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration)
+        : null;
+      dateFields = {
+        pickup_on: data.pickupOn,
+        pickup_slot: pickupSlot,
+        dropoff_on: data.dropoffOn,
+        dropoff_slot: dropoffSlot,
+        billed_days: duration.days,
+        billed_extra_hours: duration.extraHours,
+        quoted_total: quote?.totalInitialLiability ?? null,
+        original_pickup_on: data.pickupOn,
+        pickup_change_count: 0,
+      };
+    }
 
     const { data: open } = await supabaseAdmin
       .from("bookings")
@@ -46,6 +90,7 @@ export const createBooking = createServerFn({ method: "POST" })
           hub_id: data.hubId,
           plan_id: data.planId,
           status: "OTP_VERIFIED",
+          ...dateFields,
         })
         .eq("id", current.id)
         .select("id")
@@ -62,6 +107,7 @@ export const createBooking = createServerFn({ method: "POST" })
         hub_id: data.hubId,
         plan_id: data.planId,
         status: "OTP_VERIFIED",
+        ...dateFields,
       })
       .select("id")
       .single();
