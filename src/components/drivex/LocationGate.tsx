@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Clock, Loader2, MapPin, Navigation, ShieldCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -8,14 +9,12 @@ import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 import {
   approximateCoords,
-  LAUNCH_HUB,
-  LAUNCH_HUB_EMBED_URL,
-  LAUNCH_HUB_MAPS_URL,
   LOCALITIES,
   useRiderLocation,
 } from "@/lib/location";
 import { distanceKm } from "@/lib/pricing";
 import { saveLocation } from "@/lib/auth.functions";
+import { getCatalog } from "@/lib/catalog.functions";
 import { cn } from "@/lib/utils";
 
 export function LocationGate({ children }: { children: ReactNode }) {
@@ -25,6 +24,8 @@ export function LocationGate({ children }: { children: ReactNode }) {
   const [pinCode, setPinCode] = useState("");
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const catalog = useQuery({ queryKey: ["catalog"], queryFn: () => getCatalog() });
+  const hub = catalog.data?.hubs[0] ?? null;
 
   if (!ready || location) return <>{children}</>;
 
@@ -55,9 +56,16 @@ export function LocationGate({ children }: { children: ReactNode }) {
       ...(pinCode.length === 6 ? { pinCode } : {}),
       ...(coords ? { coords } : {}),
     });
-    if (!from) return null;
-    return Math.max(1, Math.round(distanceKm(from, LAUNCH_HUB.coords)));
-  }, [coords, locality, pinCode]);
+    if (!from || !hub) return null;
+    return Math.max(1, Math.round(distanceKm(from, { lat: hub.latitude, lng: hub.longitude })));
+  }, [coords, locality, pinCode, hub]);
+
+  const mapsUrl = hub
+    ? `https://www.google.com/maps/search/?api=1&query=${hub.latitude},${hub.longitude}`
+    : "#";
+  const embedUrl = hub
+    ? `https://www.google.com/maps?q=${hub.latitude},${hub.longitude}&z=14&output=embed`
+    : "";
 
   return (
     <div className="relative min-h-screen">
@@ -112,10 +120,11 @@ export function LocationGate({ children }: { children: ReactNode }) {
           className="mt-4"
         />
 
+        {hub && (
         <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card/70 shadow-lg backdrop-blur">
           <iframe
-            title={LAUNCH_HUB.name}
-            src={LAUNCH_HUB_EMBED_URL}
+            title={hub.name}
+            src={embedUrl}
             loading="lazy"
             className="h-40 w-full grayscale-[0.35] contrast-[1.05]"
             referrerPolicy="no-referrer-when-downgrade"
@@ -124,8 +133,8 @@ export function LocationGate({ children }: { children: ReactNode }) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
               {t("hubLaunchTitle")}
             </p>
-            <p className="text-sm font-semibold">{LAUNCH_HUB.name}</p>
-            <p className="text-xs text-muted-foreground">{LAUNCH_HUB.address}</p>
+            <p className="text-sm font-semibold">{hub.name}</p>
+            <p className="text-xs text-muted-foreground">{hub.address}</p>
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 text-primary" />
               {hubDistance !== null
@@ -134,11 +143,11 @@ export function LocationGate({ children }: { children: ReactNode }) {
             </p>
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Clock className="h-3.5 w-3.5 text-primary" />
-              {t("hubOpenHours")}
+              {hub.opens_at.slice(0, 5)}–{hub.closes_at.slice(0, 5)}
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <a
-                href={LAUNCH_HUB_MAPS_URL}
+                href={mapsUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-full border border-primary/40 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
@@ -148,6 +157,7 @@ export function LocationGate({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
+        )}
 
         <p className="mt-4 flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2.5 text-xs font-medium text-primary">
           <Sparkles className="h-4 w-4 shrink-0" />
