@@ -1,28 +1,43 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
-import { LifeBuoy } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Languages, LifeBuoy } from "lucide-react";
+import { toast } from "sonner";
 import { DRIVEX_SUPPORT_PHONE } from "@/lib/format";
 import { AutoBackdrop } from "@/components/drivex/AutoBackdrop";
 import { DriveXLogo } from "@/components/drivex/DriveXLogo";
-import { LANGUAGES, useLanguage, type Lang } from "@/lib/i18n";
+import { LanguageChooser } from "@/components/drivex/LanguageChooser";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { languageMeta, useLanguage } from "@/lib/i18n";
 
 function LanguagePicker() {
-  const { lang, setLang, t } = useLanguage();
+  const { active, t, tIn } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const meta = languageMeta(active);
+
   return (
-    <label className="flex items-center gap-1 rounded-full border border-border bg-card/60 px-2 py-1.5 text-xs backdrop-blur">
-      <span className="sr-only">{t("chooseLanguage")}</span>
-      <select
-        value={lang ?? "en"}
-        onChange={(event) => setLang(event.target.value as Lang)}
-        className="bg-transparent text-xs font-medium outline-none"
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={t("changeLanguage")}
+        className="flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs font-medium backdrop-blur transition-colors hover:bg-secondary"
       >
-        {LANGUAGES.map((option) => (
-          <option key={option.code} value={option.code} className="bg-card text-card-foreground">
-            {option.native}
-          </option>
-        ))}
-      </select>
-    </label>
+        <Languages className="h-3.5 w-3.5 text-primary" />
+        {meta.native}
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogTitle className="text-base">{t("chooseLanguage")}</DialogTitle>
+          <LanguageChooser
+            compact
+            onDone={(next) => {
+              setOpen(false);
+              toast.success(tIn(next, "languageSet"));
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
