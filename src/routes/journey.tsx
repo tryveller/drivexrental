@@ -414,13 +414,14 @@ function ActionButton<T>({
   onDone: () => void | Promise<void>;
   variant?: "outline";
 }) {
+  const { t } = useLanguage();
   const mutation = useMutation({
     mutationFn: run,
     onSuccess: async () => {
       await onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Something went wrong."),
+      toast.error(error instanceof Error ? error.message : t("genericError")),
   });
 
   return (
@@ -463,7 +464,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Could not run the check."),
+      toast.error(error instanceof Error ? error.message : t("couldNotCheck")),
   });
 
   if (result) {
@@ -471,9 +472,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       <StepCard
         icon={<BadgeCheck className="h-5 w-5 text-primary" />}
         title={
-          result === "LIKELY_ELIGIBLE"
-            ? "You're likely eligible"
-            : "We'll need a closer look at the hub"
+          result === "LIKELY_ELIGIBLE" ? t("eligibleTitle") : t("eligibleCloserLook")
         }
         body={
           <p className="text-sm text-muted-foreground">{t("eligibilityIndicative")}</p>
@@ -485,13 +484,13 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
   return (
     <StepCard
       icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
-      title="Optional: check your eligibility now"
+      title={t("eligibilityTitle")}
       body={
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">{t("eligibilityHint")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="dl">Driving Licence number</Label>
+              <Label htmlFor="dl">{t("dlNumberLabel")}</Label>
               <Input
                 id="dl"
                 value={dlNumber}
@@ -500,7 +499,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dlname">Name on licence</Label>
+              <Label htmlFor="dlname">{t("nameOnLicence")}</Label>
               <Input
                 id="dlname"
                 value={dlName}
@@ -508,7 +507,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dob">Date of birth</Label>
+              <Label htmlFor="dob">{t("dateOfBirth")}</Label>
               <Input
                 id="dob"
                 type="date"
@@ -523,7 +522,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
                 className="w-full"
                 onClick={() => setSelfie(true)}
               >
-                {selfie ? "Selfie captured" : "Capture selfie"}
+                {selfie ? t("selfieCaptured") : t("captureSelfie")}
               </Button>
             </div>
           </div>
@@ -533,10 +532,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
               onCheckedChange={(value) => setConsent(value === true)}
               className="mt-0.5"
             />
-            <span>
-              I authorise DriveX to perform identity, document and rental eligibility checks
-              required to process my rental request.
-            </span>
+            <span>{t("eligibilityConsent")}</span>
           </label>
         </div>
       }
@@ -548,11 +544,11 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             disabled={submit.isPending || !consent || dlNumber.length < 10 || !dlName.trim()}
           >
             {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Check my eligibility
+            {t("checkEligibility")}
           </Button>
           <ActionButton
             variant="outline"
-            label="Skip and continue"
+            label={t("skipContinue")}
             run={() => skipEligibility({ data: { bookingId } })}
             onDone={onDone}
           />
