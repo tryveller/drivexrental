@@ -246,7 +246,10 @@ function MyBikePage() {
                   <li key={entry.id} className="flex justify-between gap-3">
                     <span>
                       <span className="block font-medium">
-                        {entry.entry_type.replaceAll("_", " ").toLowerCase()}
+                        {entry.entry_type
+                          .replaceAll("_", " ")
+                          .toLowerCase()
+                          .replace(/^./, (c) => c.toUpperCase())}
                       </span>
                       <span className="block text-xs text-muted-foreground">
                         {entry.note ?? shortDate(entry.created_at)}
