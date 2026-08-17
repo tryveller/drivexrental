@@ -7,6 +7,14 @@ import { AppShell } from "@/components/drivex/AppShell";
 import { PlanCard } from "@/components/drivex/PlanCard";
 import { BikeCard } from "@/components/drivex/BikeCard";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { modelTitle } from "@/lib/format";
 import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore, distanceKm } from "@/lib/pricing";
 import { useLanguage } from "@/lib/i18n";
@@ -92,8 +100,12 @@ function Discovery() {
   }, [hub, catalog.data]);
 
   const selected = bikes.find((row) => row.model.id === modelId) ?? null;
-  const planOrder: Record<string, number> = { DAILY: 0, WEEKLY: 1, MONTHLY: 2, RTO: 3 };
-  const plans = [...(selected?.plans ?? [])].sort(
+  const planOrder: Record<string, number> = { DAILY: 0, WEEKLY: 1, MONTHLY: 2 };
+  const rentalPlans = [...(selected?.plans ?? [])]
+    .filter((plan) => plan.plan_type !== "RTO")
+    .sort((a, b) => (planOrder[a.plan_type] ?? 9) - (planOrder[b.plan_type] ?? 9));
+  const rtoPlans = (selected?.plans ?? []).filter((plan) => plan.plan_type === "RTO");
+  const plans = showRto ? rtoPlans : rentalPlans;
     (a, b) => (planOrder[a.plan_type] ?? 9) - (planOrder[b.plan_type] ?? 9),
   );
 
