@@ -174,13 +174,7 @@ function Discovery() {
   }
 
   if (catalog.isLoading) {
-    return (
-      <AppShell>
-        <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("findingBikes")}
-        </div>
-      </AppShell>
-    );
+    return <PageLoader message={t("findingBikes")} />;
   }
 
   const mapsUrl = hub
