@@ -42,7 +42,7 @@ export function BikeCard({
   onSelect: () => void;
 }) {
   const condition = computeConditionScore(vehicle);
-  const spec = bikeSpec(model.name);
+  const spec = bikeSpec(model);
   const { t } = useLanguage();
 
   const specs = [
