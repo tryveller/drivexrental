@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JourneyRouteImport } from './routes/journey'
+import { Route as MyBikeRouteImport } from './routes/my-bike'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const JourneyRoute = JourneyRouteImport.update({
   path: '/journey',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyBikeRoute = MyBikeRouteImport.update({
+  id: '/my-bike',
+  path: '/my-bike',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/journey': typeof JourneyRoute
+  '/my-bike': typeof MyBikeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/journey': typeof JourneyRoute
+  '/my-bike': typeof MyBikeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/journey': typeof JourneyRoute
+  '/my-bike': typeof MyBikeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/journey'
+  fullPaths: '/' | '/auth' | '/journey' | '/my-bike'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/journey'
-  id: '__root__' | '/' | '/auth' | '/journey'
+  to: '/' | '/auth' | '/journey' | '/my-bike'
+  id: '__root__' | '/' | '/auth' | '/journey' | '/my-bike'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   JourneyRoute: typeof JourneyRoute
+  MyBikeRoute: typeof MyBikeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JourneyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-bike': {
+      id: '/my-bike'
+      path: '/my-bike'
+      fullPath: '/my-bike'
+      preLoaderRoute: typeof MyBikeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   JourneyRoute: JourneyRoute,
+  MyBikeRoute: MyBikeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
