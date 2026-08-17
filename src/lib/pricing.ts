@@ -117,6 +117,9 @@ export type BikeHealth = {
   daysToService: number;
   kmToService: number;
   detail: string;
+  /** Localisable form of `detail`: a number plus the unit to render. */
+  detailValue: number;
+  detailUnit: "days" | "km";
 };
 
 export function computeBikeHealth(input: {
@@ -133,21 +136,21 @@ export function computeBikeHealth(input: {
     : SERVICE_INTERVAL_DAYS;
   const daysToService = SERVICE_INTERVAL_DAYS - daysSince;
 
-  const detail =
-    daysToService <= kmToService / (SERVICE_INTERVAL_KM / SERVICE_INTERVAL_DAYS)
-      ? `${Math.abs(daysToService)} days`
-      : `${Math.abs(kmToService)} km`;
+  const byDays = daysToService <= kmToService / (SERVICE_INTERVAL_KM / SERVICE_INTERVAL_DAYS);
+  const detailValue = Math.abs(byDays ? daysToService : kmToService);
+  const detailUnit = byDays ? ("days" as const) : ("km" as const);
+  const detail = `${detailValue} ${detailUnit}`;
 
   if (input.hasOpenIssue) {
-    return { status: "Attention Required", daysToService, kmToService, detail };
+    return { status: "Attention Required", daysToService, kmToService, detail, detailValue, detailUnit };
   }
   if (daysToService < 0 || kmToService < 0) {
-    return { status: "Service Overdue", daysToService, kmToService, detail };
+    return { status: "Service Overdue", daysToService, kmToService, detail, detailValue, detailUnit };
   }
   if (daysToService <= 3 || kmToService <= 250) {
-    return { status: "Service Due Soon", daysToService, kmToService, detail };
+    return { status: "Service Due Soon", daysToService, kmToService, detail, detailValue, detailUnit };
   }
-  return { status: "Good", daysToService, kmToService, detail };
+  return { status: "Good", daysToService, kmToService, detail, detailValue, detailUnit };
 }
 
 export function distanceKm(
