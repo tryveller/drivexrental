@@ -49,6 +49,8 @@ function Discovery() {
 
   const [modelId, setModelId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
+  const [planSheetOpen, setPlanSheetOpen] = useState(false);
+  const [showRto, setShowRto] = useState(false);
 
   const coords = location?.coords ?? null;
   const locality = location?.locality ?? "";
