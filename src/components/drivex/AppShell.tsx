@@ -1,4 +1,3 @@
-<<<<<<< keep
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Bike, LifeBuoy } from "lucide-react";
@@ -39,4 +38,3 @@ export function AppShell({
     </div>
   );
 }
-=======
