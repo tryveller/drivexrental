@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { ClipboardList, History, Loader2, MessageSquare, Star, Wrench } from "lucide-react";
+import { ClipboardList, History, MessageSquare, Star, Wrench } from "lucide-react";
 
 import { AppShell } from "@/components/drivex/AppShell";
+import { PageLoader } from "@/components/drivex/PageLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRiderSession } from "@/hooks/useRiderSession";
