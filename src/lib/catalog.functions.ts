@@ -46,6 +46,16 @@ export type CatalogInventory = {
   available: number;
 };
 
+export type CatalogVehicle = {
+  id: string;
+  hub_id: string;
+  model_id: string;
+  condition: "NEW" | "REFURBISHED";
+  odometer_km: number;
+  last_service_date: string | null;
+  last_service_odometer: number;
+};
+
 export const getCatalog = createServerFn({ method: "GET" }).handler(async () => {
   const { publicClient } = await import("./drivex.server");
   const supabase = publicClient();
@@ -62,7 +72,11 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
       .select(
         "id, model_id, plan_type, vehicle_condition, billing_period, rental_amount, deposit_amount, downpayment_amount, processing_fee, included_km, extra_km_rate, reservation_amount, late_fee_per_day, rto_total_months",
       ),
-    supabase.from("vehicles").select("hub_id, model_id, condition, status"),
+    supabase
+      .from("vehicles")
+      .select(
+        "id, hub_id, model_id, condition, status, odometer_km, last_service_date, last_service_odometer",
+      ),
   ]);
 
   const inventory: CatalogInventory[] = [];
@@ -84,6 +98,17 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
   return {
     hubs: (hubs.data ?? []) as CatalogHub[],
     models: (models.data ?? []) as CatalogModel[],
+    vehicles: (vehicles.data ?? [])
+      .filter((v) => v.status === "AVAILABLE" || v.status === "READY_FOR_RENT")
+      .map((v) => ({
+        id: v.id,
+        hub_id: v.hub_id,
+        model_id: v.model_id,
+        condition: v.condition,
+        odometer_km: v.odometer_km,
+        last_service_date: v.last_service_date,
+        last_service_odometer: v.last_service_odometer,
+      })) as CatalogVehicle[],
     plans: ((plans.data ?? []) as unknown[]).map((plan) => ({
       ...(plan as CatalogPlan),
       extra_km_rate: Number((plan as CatalogPlan).extra_km_rate),
