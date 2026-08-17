@@ -168,7 +168,7 @@ export function distanceKm(
 // telemetry: odometer, service recency and new/refurbished condition.
 export type ConditionScore = {
   score: number;
-  label: "Excellent" | "Very good" | "Good" | "Fair";
+  labelKey: "condExcellent" | "condVeryGood" | "condGood" | "condFair";
 };
 
 export function computeConditionScore(vehicle: {
@@ -189,7 +189,13 @@ export function computeConditionScore(vehicle: {
     55,
     Math.round(base - agePenalty - servicePenalty - freshnessPenalty),
   );
-  const label =
-    score >= 92 ? "Excellent" : score >= 84 ? "Very good" : score >= 74 ? "Good" : "Fair";
-  return { score, label };
+  const labelKey =
+    score >= 92
+      ? ("condExcellent" as const)
+      : score >= 84
+        ? ("condVeryGood" as const)
+        : score >= 74
+          ? ("condGood" as const)
+          : ("condFair" as const);
+  return { score, labelKey };
 }
