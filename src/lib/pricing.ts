@@ -17,6 +17,7 @@ export type PlanConfig = {
   late_fee_per_day: number;
   vehicle_condition: "NEW" | "REFURBISHED";
   rto_total_months: number | null;
+  late_return_fee?: number;
 };
 
 // Labels are copy keys (resolved through i18n at render time), never English
@@ -33,11 +34,79 @@ export type Quote = {
   reservationCredit: number;
   amountAtHub: number;
   totalInitialLiability: number;
+  /** Billed whole days, when the rider has chosen dates. */
+  days: number | null;
+  /** Hours beyond the whole days, billed pro-rata. */
+  extraHours: number;
+  /** Rent portion for the chosen duration. */
+  rentAmount: number;
+  /** Rent ÷ billed days (the refundable deposit is excluded). */
+  perDay: number | null;
 };
 
-export function buildQuote(plan: PlanConfig): Quote {
+// ---------------------------------------------------------------------------
+// Pick-up / drop-off slots. Riders pick a bucket, not an exact minute — it is
+// enough for the hub to prepare the bike and keeps the choice mobile-friendly.
+// ---------------------------------------------------------------------------
+
+export type SlotKey = "MORNING" | "LATE_MORNING" | "AFTERNOON" | "EVENING";
+
+export const SLOTS: { key: SlotKey; startHour: number; endHour: number; labelKey: string }[] = [
+  { key: "MORNING", startHour: 8, endHour: 11, labelKey: "slotMorning" },
+  { key: "LATE_MORNING", startHour: 11, endHour: 13, labelKey: "slotLateMorning" },
+  { key: "AFTERNOON", startHour: 13, endHour: 16, labelKey: "slotAfternoon" },
+  { key: "EVENING", startHour: 16, endHour: 19, labelKey: "slotEvening" },
+];
+
+export function slotStartHour(slot: string | null | undefined): number {
+  return SLOTS.find((row) => row.key === slot)?.startHour ?? 8;
+}
+
+export function slotLabelKey(slot: string | null | undefined): string {
+  return SLOTS.find((row) => row.key === slot)?.labelKey ?? "slotMorning";
+}
+
+export function isSlotKey(value: unknown): value is SlotKey {
+  return SLOTS.some((row) => row.key === value);
+}
+
+/** Day rate implied by the plan: weekly ÷ 7, monthly ÷ 30, daily as-is. */
+export function planDayRate(plan: Pick<PlanConfig, "plan_type" | "rental_amount">): number {
+  if (plan.plan_type === "WEEKLY") return plan.rental_amount / 7;
+  if (plan.plan_type === "MONTHLY" || plan.plan_type === "RTO") return plan.rental_amount / 30;
+  return plan.rental_amount;
+}
+
+export type RideDuration = { days: number; extraHours: number; totalHours: number };
+
+/**
+ * Exact duration between the chosen pick-up and drop-off slots. Whole days are
+ * billed at the plan day rate; the leftover hours are billed pro-rata, so a
+ * rider who returns a few hours late never pays for a whole extra day.
+ */
+export function computeDuration(
+  pickupOn: string | null | undefined,
+  pickupSlot: string | null | undefined,
+  dropoffOn: string | null | undefined,
+  dropoffSlot: string | null | undefined,
+): RideDuration | null {
+  if (!pickupOn || !dropoffOn) return null;
+  const start = new Date(`${pickupOn}T00:00:00`);
+  start.setHours(slotStartHour(pickupSlot));
+  const end = new Date(`${dropoffOn}T00:00:00`);
+  end.setHours(slotStartHour(dropoffSlot));
+  const hours = Math.round((end.getTime() - start.getTime()) / 3_600_000);
+  if (hours <= 0) return null;
+  // Anything up to 24 hours is one day; beyond that, whole days plus hours.
+  const days = Math.max(1, Math.floor(hours / 24));
+  const extraHours = Math.max(0, hours - days * 24);
+  return { days, extraHours, totalHours: hours };
+}
+
+export function buildQuote(plan: PlanConfig, duration?: RideDuration | null): Quote {
   const reservation = plan.reservation_amount;
   const lines: QuoteLine[] = [];
+  let rentAmount = plan.rental_amount;
 
   if (plan.plan_type === "RTO") {
     if (plan.downpayment_amount > 0) {
@@ -48,6 +117,26 @@ export function buildQuote(plan: PlanConfig): Quote {
     }
     if (plan.rental_amount > 0) {
       lines.push({ labelKey: "lineFirstMonthly", amount: plan.rental_amount });
+    }
+  } else if (duration) {
+    const rate = planDayRate(plan);
+    const dayPart = Math.round(rate * duration.days);
+    const hourPart = Math.round((rate / 24) * duration.extraHours);
+    rentAmount = dayPart + hourPart;
+    lines.push({
+      labelKey: "lineRentDays",
+      labelVars: { days: duration.days },
+      amount: dayPart,
+    });
+    if (hourPart > 0) {
+      lines.push({
+        labelKey: "lineRentExtraHours",
+        labelVars: { hours: duration.extraHours },
+        amount: hourPart,
+      });
+    }
+    if (plan.deposit_amount > 0) {
+      lines.push({ labelKey: "lineDeposit", amount: plan.deposit_amount });
     }
   } else {
     lines.push({
@@ -68,8 +157,25 @@ export function buildQuote(plan: PlanConfig): Quote {
     reservationCredit: reservation,
     amountAtHub: totalInitialLiability - reservation,
     totalInitialLiability,
+    days: duration?.days ?? null,
+    extraHours: duration?.extraHours ?? 0,
+    rentAmount,
+    perDay: duration
+      ? Math.round(rentAmount / (duration.days + duration.extraHours / 24))
+      : null,
   };
 }
+
+/** How late a return may be before the configurable late-return fee applies. */
+export const LATE_RETURN_FEE_FALLBACK = 50;
+
+export function lateReturnFee(plan: Pick<PlanConfig, "late_return_fee">): number {
+  return plan.late_return_fee ?? LATE_RETURN_FEE_FALLBACK;
+}
+
+/** Reserved bikes are held for the rider: one pick-up change, up to 3 days later. */
+export const MAX_PICKUP_CHANGES = 1;
+export const MAX_PICKUP_SHIFT_DAYS = 3;
 
 export const OTHER_POSSIBLE_CHARGE_KEYS = [
   "chargeExtraKm",

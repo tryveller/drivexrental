@@ -6,6 +6,7 @@ import { Loader2, MapPin, Navigation, Clock, Sparkles, ChevronRight } from "luci
 import { AppShell } from "@/components/drivex/AppShell";
 import { PlanCard } from "@/components/drivex/PlanCard";
 import { BikeCard } from "@/components/drivex/BikeCard";
+import { DatesStep, defaultDates, type RideDates } from "@/components/drivex/DatesStep";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { modelTitle } from "@/lib/format";
 import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
-import { computeConditionScore, distanceKm } from "@/lib/pricing";
+import { computeConditionScore, computeDuration, distanceKm } from "@/lib/pricing";
 import { useLanguage } from "@/lib/i18n";
 import { useRiderLocation } from "@/lib/location";
 import bannerImage from "@/assets/drivex-banner.jpg";
@@ -51,6 +52,7 @@ function Discovery() {
   const [planId, setPlanId] = useState<string | null>(null);
   const [planSheetOpen, setPlanSheetOpen] = useState(false);
   const [showRto, setShowRto] = useState(false);
+  const [dates, setDates] = useState<RideDates>(() => defaultDates());
 
   const coords = location?.coords ?? null;
   const locality = location?.locality ?? "";
@@ -108,12 +110,21 @@ function Discovery() {
     .sort((a, b) => (planOrder[a.plan_type] ?? 9) - (planOrder[b.plan_type] ?? 9));
   const rtoPlans = (selected?.plans ?? []).filter((plan) => plan.plan_type === "RTO");
   const plans = showRto ? rtoPlans : rentalPlans;
+  const chosenPlan = plans.find((plan) => plan.id === planId) ?? null;
+  const needsDates = Boolean(chosenPlan) && chosenPlan?.plan_type !== "RTO";
+  const duration = computeDuration(
+    dates.pickupOn,
+    dates.pickupSlot,
+    dates.dropoffOn,
+    dates.dropoffSlot,
+  );
+  const canContinue = Boolean(planId) && (!needsDates || duration !== null);
 
   function continueToReserve() {
     if (!modelId || !hub || !planId) return;
     sessionStorage.setItem(
       "drivex.selection",
-      JSON.stringify({ modelId, hubId: hub.id, planId }),
+      JSON.stringify({ modelId, hubId: hub.id, planId, ...(needsDates ? dates : {}) }),
     );
     navigate({ to: "/auth" });
   }
@@ -206,7 +217,7 @@ function Discovery() {
       </section>
 
       <Dialog open={planSheetOpen && Boolean(selected)} onOpenChange={setPlanSheetOpen}>
-        <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
+        <DialogContent className="max-h-[92vh] max-w-lg gap-0 overflow-y-auto p-0">
           <DialogHeader className="px-5 pt-5 text-left">
             <DialogTitle>{showRto ? t("rtoTitle") : t("choosePlan")}</DialogTitle>
             <DialogDescription>
@@ -225,6 +236,12 @@ function Discovery() {
               </div>
             ))}
           </div>
+
+          {needsDates && chosenPlan && (
+            <div className="px-5 pb-4">
+              <DatesStep plan={chosenPlan} value={dates} onChange={setDates} />
+            </div>
+          )}
 
           {rtoPlans.length > 0 && (
             <button
@@ -250,14 +267,14 @@ function Discovery() {
             </button>
           )}
 
-          <div className="border-t border-border bg-card/60 p-4">
+          <div className="sticky bottom-0 border-t border-border bg-card/95 p-4 backdrop-blur">
             <Button
               className="w-full"
               size="lg"
-              disabled={!planId}
+              disabled={!canContinue}
               onClick={continueToReserve}
             >
-              {t("continueReserve")}
+              {planId ? t("continueReserve") : t("pickDatesFirst")}
             </Button>
           </div>
         </DialogContent>

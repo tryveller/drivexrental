@@ -24,6 +24,7 @@ import { useRiderSession } from "@/hooks/useRiderSession";
 import { getCatalog } from "@/lib/catalog.functions";
 import {
   acceptAgreement,
+  changePickupDate,
   checkInAtHub,
   confirmHandover,
   createBooking,
@@ -36,7 +37,13 @@ import {
   submitEligibility,
   submitHubKyc,
 } from "@/lib/booking.functions";
-import { OTHER_POSSIBLE_CHARGE_KEYS, buildQuote } from "@/lib/pricing";
+import {
+  MAX_PICKUP_SHIFT_DAYS,
+  OTHER_POSSIBLE_CHARGE_KEYS,
+  buildQuote,
+  computeDuration,
+  slotLabelKey,
+} from "@/lib/pricing";
 import { longDate, modelTitle, rupees } from "@/lib/format";
 import { useLanguage, type TKey } from "@/lib/i18n";
 
@@ -127,7 +134,15 @@ function JourneyPage() {
     const raw = sessionStorage.getItem("drivex.selection");
     setBootstrapped(true);
     if (!raw) return;
-    const selection = JSON.parse(raw) as { modelId: string; hubId: string; planId: string };
+    const selection = JSON.parse(raw) as {
+      modelId: string;
+      hubId: string;
+      planId: string;
+      pickupOn?: string;
+      pickupSlot?: string;
+      dropoffOn?: string;
+      dropoffSlot?: string;
+    };
     sessionStorage.removeItem("drivex.selection");
     createBooking({ data: selection })
       .then(() => queryClient.invalidateQueries({ queryKey: ["journey"] }))
@@ -178,7 +193,13 @@ function JourneyPage() {
     );
   }
 
-  const quote = buildQuote(plan);
+  const duration = computeDuration(
+    booking.pickup_on,
+    booking.pickup_slot,
+    booking.dropoff_on,
+    booking.dropoff_slot,
+  );
+  const quote = buildQuote(plan, duration);
 
   return (
     <AppShell subtitle={t("subtitleBooking")}>
@@ -206,6 +227,17 @@ function JourneyPage() {
           </p>
         )}
       </header>
+
+      {duration && (
+        <BookingDatesCard
+          booking={booking}
+          perDay={quote.perDay}
+          total={quote.totalInitialLiability}
+          days={duration.days}
+          extraHours={duration.extraHours}
+          onChanged={refresh}
+        />
+      )}
 
       <div className="mt-5 space-y-4">
         {step === "ELIGIBILITY" && (
@@ -862,5 +894,128 @@ function AgreementStep({ bookingId, onDone }: { bookingId: string; onDone: () =>
         )
       }
     />
+  );
+}
+/** Booked dates, the per-day price, and the one allowed pick-up date change. */
+function BookingDatesCard({
+  booking,
+  perDay,
+  total,
+  days,
+  extraHours,
+  onChanged,
+}: {
+  booking: {
+    id: string;
+    pickup_on: string | null;
+    pickup_slot: string | null;
+    dropoff_on: string | null;
+    dropoff_slot: string | null;
+    original_pickup_on: string | null;
+    pickup_change_count: number | null;
+  };
+  perDay: number | null;
+  total: number;
+  days: number;
+  extraHours: number;
+  onChanged: () => void;
+}) {
+  const { t } = useLanguage();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(booking.pickup_on ?? "");
+  const used = (booking.pickup_change_count ?? 0) >= 1;
+
+  const base = booking.original_pickup_on ?? booking.pickup_on;
+  const maxDate = base
+    ? new Date(new Date(`${base}T00:00:00`).getTime() + MAX_PICKUP_SHIFT_DAYS * 86_400_000)
+        .toISOString()
+        .slice(0, 10)
+    : undefined;
+
+  const change = useMutation({
+    mutationFn: () => changePickupDate({ data: { bookingId: booking.id, pickupOn: value } }),
+    onSuccess: (result) => {
+      if (result.ok) {
+        toast.success(t("changePickupDone"));
+        setEditing(false);
+        onChanged();
+      } else {
+        toast.error(result.reason === "USED" ? t("changePickupUsed") : t("changePickupTooFar"));
+      }
+    },
+    onError: (error: unknown) =>
+      toast.error(error instanceof Error ? error.message : t("changePickupTooFar")),
+  });
+
+  return (
+    <section className="mt-4 rounded-2xl border border-border bg-card p-4">
+      <p className="text-sm font-semibold">{t("yourDatesTitle")}</p>
+      <dl className="mt-2 space-y-1.5 text-sm">
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-foreground">{t("pickupDateLabel")}</dt>
+          <dd className="text-right font-medium">
+            {longDate(booking.pickup_on)} · {t(slotLabelKey(booking.pickup_slot) as TKey)}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-foreground">{t("dropoffDateLabel")}</dt>
+          <dd className="text-right font-medium">
+            {longDate(booking.dropoff_on)} · {t(slotLabelKey(booking.dropoff_slot) as TKey)}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-foreground">{t("daysBilledLabel")}</dt>
+          <dd className="font-medium">
+            {extraHours > 0
+              ? t("daysAndHours", { days, hours: extraHours })
+              : t("lineRentDays", { days })}
+          </dd>
+        </div>
+        <div className="flex justify-between gap-4 border-t border-border pt-1.5">
+          <dt className="text-muted-foreground">{t("totalToPay")}</dt>
+          <dd className="font-semibold">{rupees(total)}</dd>
+        </div>
+      </dl>
+      {perDay !== null && (
+        <p className="mt-1 text-right text-xs text-primary">
+          {t("perDayApprox", { amount: rupees(perDay) })}
+        </p>
+      )}
+
+      {used ? (
+        <p className="mt-3 text-[11px] text-muted-foreground">{t("changePickupUsed")}</p>
+      ) : editing ? (
+        <div className="mt-3 space-y-2">
+          <Input
+            type="date"
+            value={value}
+            min={booking.pickup_on ?? undefined}
+            max={maxDate}
+            onChange={(event) => setValue(event.target.value)}
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={!value || change.isPending}
+              onClick={() => change.mutate()}
+            >
+              {t("changePickupCta")}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+              {t("cancelAction")}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">{t("changePickupHint")}</p>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="mt-3 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+        >
+          {t("changePickupCta")}
+        </button>
+      )}
+    </section>
   );
 }
