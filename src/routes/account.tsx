@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useRiderSession } from "@/hooks/useRiderSession";
 import { getAccountOverview } from "@/lib/account.functions";
 import { longDate, modelTitle, rupees } from "@/lib/format";
+import { slotLabelKey } from "@/lib/pricing";
 import { useLanguage, type TKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/account")({
@@ -159,7 +160,7 @@ function AccountPage() {
             <div>
               <p className="text-sm font-medium">{longDate(row.scheduled_on)}</p>
               <p className="text-xs text-muted-foreground">
-                {t(row.slot as TKey)}
+                {t(slotLabelKey(row.slot) as TKey)}
                 {row.hubName ? ` · ${row.hubName}` : ""}
               </p>
               {row.work_done && (

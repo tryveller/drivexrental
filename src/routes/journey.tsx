@@ -116,6 +116,11 @@ function JourneyPage() {
   const session = useRiderSession();
   const queryClient = useQueryClient();
   const [bootstrapped, setBootstrapped] = useState(false);
+  // A selection carried through sign-in becomes a booking on this screen, so we
+  // must not flash the "no booking" empty state while that call is in flight.
+  const [creating, setCreating] = useState(
+    () => typeof window !== "undefined" && Boolean(sessionStorage.getItem("drivex.selection")),
+  );
 
   const journey = useQuery({
     queryKey: ["journey"],
@@ -133,7 +138,10 @@ function JourneyPage() {
     if (bootstrapped || !session.userId || !journey.data) return;
     const raw = sessionStorage.getItem("drivex.selection");
     setBootstrapped(true);
-    if (!raw) return;
+    if (!raw) {
+      setCreating(false);
+      return;
+    }
     const selection = JSON.parse(raw) as {
       modelId: string;
       hubId: string;
@@ -144,20 +152,23 @@ function JourneyPage() {
       dropoffSlot?: string;
     };
     sessionStorage.removeItem("drivex.selection");
+    setCreating(true);
     createBooking({ data: selection })
       .then(() => queryClient.invalidateQueries({ queryKey: ["journey"] }))
       .catch((error: unknown) =>
         toast.error(error instanceof Error ? error.message : t("couldNotStartBooking")),
-      );
+      )
+      .finally(() => setCreating(false));
   }, [bootstrapped, session.userId, journey.data, queryClient, t]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["journey"] });
 
-  if (session.loading || journey.isLoading || catalog.isLoading) {
+  if (session.loading || journey.isLoading || catalog.isLoading || creating) {
     return (
       <AppShell subtitle={t("subtitleBooking")}>
         <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loadingBooking")}
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+          {creating ? t("preparingBooking") : t("loadingBooking")}
         </div>
       </AppShell>
     );
