@@ -96,7 +96,7 @@ export function BikeCard({
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">
           <ShieldCheck className="h-3 w-3" />
-          {condition.score}
+          {condition.score}/100
           <span className="font-medium opacity-90">· {t(condition.labelKey)}</span>
         </span>
         <div className="absolute inset-x-3 bottom-2 flex items-end justify-between gap-2">
