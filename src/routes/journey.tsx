@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/drivex/AppShell";
+import { CaptureField } from "@/components/drivex/CaptureField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -442,7 +443,9 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
   const [dlNumber, setDlNumber] = useState("");
   const [dlName, setDlName] = useState("");
   const [dlDob, setDlDob] = useState("");
-  const [selfie, setSelfie] = useState(false);
+  const [selfiePath, setSelfiePath] = useState<string | null>(null);
+  const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
+  const [dlBackPath, setDlBackPath] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
@@ -454,7 +457,10 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
           dlNumber,
           dlName,
           dlDob,
-          selfieCaptured: selfie,
+          selfieCaptured: Boolean(selfiePath),
+          selfiePath,
+          dlFrontPath,
+          dlBackPath,
           consent,
           method: "DIGITAL",
         },
@@ -515,16 +521,33 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
                 onChange={(event) => setDlDob(event.target.value)}
               />
             </div>
-            <div className="flex items-end">
-              <Button
-                type="button"
-                variant={selfie ? "secondary" : "outline"}
-                className="w-full"
-                onClick={() => setSelfie(true)}
-              >
-                {selfie ? t("selfieCaptured") : t("captureSelfie")}
-              </Button>
-            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <CaptureField
+              bookingId={bookingId}
+              slot="dl-front"
+              label={t("dlFrontLabel")}
+              hint={t("dlFrontHint")}
+              value={dlFrontPath}
+              onChange={setDlFrontPath}
+            />
+            <CaptureField
+              bookingId={bookingId}
+              slot="dl-back"
+              label={t("dlBackLabel")}
+              hint={t("dlBackHint")}
+              value={dlBackPath}
+              onChange={setDlBackPath}
+            />
+            <CaptureField
+              bookingId={bookingId}
+              slot="selfie"
+              label={t("selfieLabel")}
+              hint={t("selfieHint")}
+              facing="user"
+              value={selfiePath}
+              onChange={setSelfiePath}
+            />
           </div>
           <label className="flex items-start gap-2 text-xs text-muted-foreground">
             <Checkbox
@@ -541,7 +564,14 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
           <Button
             className="w-full sm:w-auto"
             onClick={() => submit.mutate()}
-            disabled={submit.isPending || !consent || dlNumber.length < 10 || !dlName.trim()}
+            disabled={
+              submit.isPending ||
+              !consent ||
+              dlNumber.length < 10 ||
+              !dlName.trim() ||
+              !dlFrontPath ||
+              !selfiePath
+            }
           >
             {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t("checkEligibility")}
@@ -571,12 +601,25 @@ function HubKycStep({
   const [dlNumber, setDlNumber] = useState("");
   const [dlName, setDlName] = useState("");
   const [addressProof, setAddressProof] = useState("");
-  const [selfie, setSelfie] = useState(false);
+  const [selfiePath, setSelfiePath] = useState<string | null>(null);
+  const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
+  const [dlBackPath, setDlBackPath] = useState<string | null>(null);
+  const [addressProofPath, setAddressProofPath] = useState<string | null>(null);
 
   const submit = useMutation({
     mutationFn: () =>
       submitHubKyc({
-        data: { bookingId, dlNumber, dlName, addressProof, selfieCaptured: selfie },
+        data: {
+          bookingId,
+          dlNumber,
+          dlName,
+          addressProof,
+          selfieCaptured: Boolean(selfiePath),
+          selfiePath,
+          dlFrontPath,
+          dlBackPath,
+          addressProofPath,
+        },
       }),
     onSuccess: (data) => {
       if (data.status === "ACTION_REQUIRED") {
@@ -629,24 +672,60 @@ function HubKycStep({
                 placeholder={t("addressProofPlaceholder")}
               />
             </div>
-            <div className="flex items-end">
-              <Button
-                type="button"
-                variant={selfie ? "secondary" : "outline"}
-                className="w-full"
-                onClick={() => setSelfie(true)}
-              >
-                {selfie ? t("selfieCaptured") : t("captureSelfie")}
-              </Button>
-            </div>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <CaptureField
+              bookingId={bookingId}
+              slot="dl-front"
+              label={t("dlFrontLabel")}
+              hint={t("dlFrontHint")}
+              value={dlFrontPath}
+              onChange={setDlFrontPath}
+            />
+            <CaptureField
+              bookingId={bookingId}
+              slot="dl-back"
+              label={t("dlBackLabel")}
+              hint={t("dlBackHint")}
+              value={dlBackPath}
+              onChange={setDlBackPath}
+            />
+            <CaptureField
+              bookingId={bookingId}
+              slot="address-proof"
+              label={t("addressProofPhotoLabel")}
+              hint={t("addressProofPhotoHint")}
+              value={addressProofPath}
+              onChange={setAddressProofPath}
+            />
+            <CaptureField
+              bookingId={bookingId}
+              slot="selfie"
+              label={t("selfieLabel")}
+              hint={t("selfieHint")}
+              facing="user"
+              value={selfiePath}
+              onChange={setSelfiePath}
+            />
+          </div>
+          {(!dlFrontPath || !addressProofPath || !selfiePath || !addressProof.trim()) && (
+            <p className="text-xs text-muted-foreground">{t("docsPending")}</p>
+          )}
         </div>
       }
       action={
         <Button
           className="w-full sm:w-auto"
           onClick={() => submit.mutate()}
-          disabled={submit.isPending}
+          disabled={
+            submit.isPending ||
+            !dlNumber.trim() ||
+            !dlName.trim() ||
+            !addressProof.trim() ||
+            !dlFrontPath ||
+            !addressProofPath ||
+            !selfiePath
+          }
         >
           {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {t("submitDocuments")}

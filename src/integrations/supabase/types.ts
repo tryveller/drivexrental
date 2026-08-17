@@ -338,7 +338,9 @@ export type Database = {
       kyc_cases: {
         Row: {
           action_required_reason: string | null
+          address_proof_path: string | null
           address_proof_status: string
+          address_proof_type: string | null
           booking_id: string
           consent_at: string | null
           consent_device: string | null
@@ -346,8 +348,10 @@ export type Database = {
           consent_version: string | null
           created_at: string
           customer_id: string
+          dl_back_path: string | null
           dl_class: string | null
           dl_dob: string | null
+          dl_front_path: string | null
           dl_name: string | null
           dl_number: string | null
           dl_state: string | null
@@ -357,12 +361,15 @@ export type Database = {
           id: string
           rejection_reason: string | null
           selfie_captured: boolean
+          selfie_path: string | null
           status: Database["public"]["Enums"]["kyc_status"]
           updated_at: string
         }
         Insert: {
           action_required_reason?: string | null
+          address_proof_path?: string | null
           address_proof_status?: string
+          address_proof_type?: string | null
           booking_id: string
           consent_at?: string | null
           consent_device?: string | null
@@ -370,8 +377,10 @@ export type Database = {
           consent_version?: string | null
           created_at?: string
           customer_id: string
+          dl_back_path?: string | null
           dl_class?: string | null
           dl_dob?: string | null
+          dl_front_path?: string | null
           dl_name?: string | null
           dl_number?: string | null
           dl_state?: string | null
@@ -381,12 +390,15 @@ export type Database = {
           id?: string
           rejection_reason?: string | null
           selfie_captured?: boolean
+          selfie_path?: string | null
           status?: Database["public"]["Enums"]["kyc_status"]
           updated_at?: string
         }
         Update: {
           action_required_reason?: string | null
+          address_proof_path?: string | null
           address_proof_status?: string
+          address_proof_type?: string | null
           booking_id?: string
           consent_at?: string | null
           consent_device?: string | null
@@ -394,8 +406,10 @@ export type Database = {
           consent_version?: string | null
           created_at?: string
           customer_id?: string
+          dl_back_path?: string | null
           dl_class?: string | null
           dl_dob?: string | null
+          dl_front_path?: string | null
           dl_name?: string | null
           dl_number?: string | null
           dl_state?: string | null
@@ -405,6 +419,7 @@ export type Database = {
           id?: string
           rejection_reason?: string | null
           selfie_captured?: boolean
+          selfie_path?: string | null
           status?: Database["public"]["Enums"]["kyc_status"]
           updated_at?: string
         }

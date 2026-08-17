@@ -60,3 +60,11 @@ export async function track(
     booking_id: ids.bookingId ?? null,
   });
 }
+/**
+ * Indian DL numbers are written many ways (KA01 20150001234, KA-01-2015-0001234,
+ * DL1420110012345). Accept any state code + 11-14 alphanumerics after cleaning.
+ */
+export function isLikelyDl(value: string): boolean {
+  const dl = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return /^[A-Z]{2}[0-9A-Z]{11,14}$/.test(dl);
+}
