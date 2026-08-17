@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Loader2, MapPin, Bike as BikeIcon } from "lucide-react";
+import { Loader2, MapPin, Bike as BikeIcon, Navigation, ExternalLink } from "lucide-react";
 
 import { AppShell } from "@/components/drivex/AppShell";
 import { PlanCard } from "@/components/drivex/PlanCard";
@@ -87,9 +87,26 @@ function Discovery() {
     });
   }, [catalog.data]);
 
+  const hubStock = useMemo(() => {
+    const inventory = catalog.data?.inventory ?? [];
+    const models = catalog.data?.models ?? [];
+    return hubs.map((hub) => ({
+      hub,
+      rows: inventory
+        .filter((row) => row.hub_id === hub.id && row.available > 0)
+        .flatMap((row) => {
+          const model = models.find((m) => m.id === row.model_id);
+          return model ? [{ ...row, model }] : [];
+        }),
+    }));
+  }, [hubs, catalog.data]);
+
+  const selectedHub = hubStock.find((row) => row.hub.id === hubId) ?? null;
   const selectedModel = availability.find((row) => row.model.id === modelId) ?? null;
-  const modelHubs = hubs.filter((hub) => selectedModel?.hubsWithStock.includes(hub.id));
-  const plans = selectedModel?.plans ?? [];
+  const planOrder: Record<string, number> = { DAILY: 0, WEEKLY: 1, MONTHLY: 2, RTO: 3 };
+  const plans = [...(selectedModel?.plans ?? [])].sort(
+    (a, b) => (planOrder[a.plan_type] ?? 9) - (planOrder[b.plan_type] ?? 9),
+  );
 
   function continueToReserve() {
     if (!modelId || !hubId || !planId) return;
@@ -151,103 +168,141 @@ function Discovery() {
       <p className="mt-4 text-sm text-muted-foreground">{t("discoveryIntro")}</p>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold">{t("bikesNearYou")}</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {availability.map(({ model, total, cheapest }) => {
-            const soldOut = total === 0;
+        <h2 className="text-sm font-semibold">{t("hubsNearYou")}</h2>
+        <p className="mt-1 text-xs text-muted-foreground">{t("hubsIntro")}</p>
+        <div className="mt-3 space-y-3">
+          {hubStock.map(({ hub, rows }) => {
+            const total = rows.reduce((sum, row) => sum + row.available, 0);
+            const active = hubId === hub.id;
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${hub.latitude},${hub.longitude}`;
             return (
-              <button
-                key={model.id}
-                type="button"
-                disabled={soldOut}
-                onClick={() => {
-                  setModelId(model.id);
-                  setHubId(null);
-                  setPlanId(null);
-                }}
+              <div
+                key={hub.id}
                 className={cn(
-                  "rounded-2xl border p-4 text-left transition-colors",
-                  modelId === model.id
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "border-border bg-card/70 backdrop-blur hover:border-primary/40",
-                  soldOut && "opacity-60",
+                  "rounded-2xl border p-4 transition-colors",
+                  active
+                    ? "border-primary bg-primary/10 ring-1 ring-primary"
+                    : "border-border bg-card/70 backdrop-blur",
                 )}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
-                    <BikeIcon className="h-5 w-5 text-primary" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHubId(hub.id);
+                    setModelId(null);
+                    setPlanId(null);
+                  }}
+                  className="flex w-full items-start gap-3 text-left"
+                >
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                    <MapPin className="h-4 w-4 text-primary" />
                   </span>
-                  <Badge variant={soldOut ? "secondary" : "default"}>
-                    {soldOut ? "Not available" : `${total} available`}
-                  </Badge>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">{hub.name}</span>
+                      {hub.distance !== null && (
+                        <Badge variant="default" className="gap-1">
+                          <Navigation className="h-3 w-3" />
+                          {hub.distance} km
+                        </Badge>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">{hub.address}</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Open {hub.opens_at}–{hub.closes_at} · {total} bikes parked
+                      {hub.distance !== null ? ` · ${hub.distance} km ${t("awayFromYou")}` : ""}
+                    </span>
+                  </span>
+                </button>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  {rows.map((row) => (
+                    <span
+                      key={row.model_id}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-medium"
+                    >
+                      <BikeIcon className="h-3 w-3 text-primary" />
+                      {modelTitle(row.model.brand, row.model.name)} · {row.available}
+                    </span>
+                  ))}
+                  {rows.length === 0 && (
+                    <span className="text-xs text-muted-foreground">{t("soldOut")}</span>
+                  )}
                 </div>
-                <p className="mt-3 font-semibold">{modelTitle(model.brand, model.name)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {model.fuel_type} · {model.transmission}
-                  {model.engine ? ` · ${model.engine}` : ""}
-                </p>
-                <p className="mt-2 text-sm">
-                  {cheapest ? `From ${rupees(cheapest)}` : "Plans coming soon"}
-                </p>
-                {soldOut && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {t("soldOut")}
-                  </p>
-                )}
-              </button>
+
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {t("openInMaps")}
+                </a>
+              </div>
             );
           })}
         </div>
       </section>
 
-      {selectedModel && (
+      {selectedHub && selectedHub.rows.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-sm font-semibold">{t("pickHub")}</h2>
-          {modelHubs.length === 0 ? (
-            <p className="mt-3 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground backdrop-blur">
-              {t("noHubStock")}
-            </p>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {modelHubs.map((hub) => (
+          <h2 className="text-sm font-semibold">{t("bikesAtHub")}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">{selectedHub.hub.name}</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {selectedHub.rows.map((row) => {
+              const model = row.model;
+              const cheapest =
+                availability.find((a) => a.model.id === row.model_id)?.cheapest ?? null;
+              return (
                 <button
-                  key={hub.id}
+                  key={model.id}
                   type="button"
-                  onClick={() => setHubId(hub.id)}
+                  onClick={() => {
+                    setModelId(model.id);
+                    setPlanId(null);
+                  }}
                   className={cn(
-                    "flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition-colors",
-                    hubId === hub.id
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    "rounded-2xl border p-4 text-left transition-colors",
+                    modelId === model.id
+                      ? "border-primary bg-primary/10 ring-1 ring-primary"
                       : "border-border bg-card/70 backdrop-blur hover:border-primary/40",
                   )}
                 >
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>
-                    <span className="block font-medium">{hub.name}</span>
-                    <span className="block text-xs text-muted-foreground">{hub.address}</span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      Open {hub.opens_at}–{hub.closes_at}
-                      {hub.distance !== null ? ` · ${hub.distance} km away` : ""}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
+                      <BikeIcon className="h-5 w-5 text-primary" />
                     </span>
-                  </span>
+                    <Badge variant="default">{row.available} available</Badge>
+                  </div>
+                  <p className="mt-3 font-semibold">{modelTitle(model.brand, model.name)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {model.fuel_type} · {model.transmission}
+                    {model.engine ? ` · ${model.engine}` : ""}
+                  </p>
+                  <p className="mt-2 text-sm">
+                    {cheapest ? `From ${rupees(cheapest)}` : "Plans coming soon"}
+                  </p>
                 </button>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </section>
       )}
 
       {selectedModel && hubId && (
         <section className="mt-6">
           <h2 className="text-sm font-semibold">{t("choosePlan")}</h2>
-          <div className="mt-3 space-y-3">
+          <p className="mt-1 text-xs text-muted-foreground">{t("swipePlans")}</p>
+          <div className="-mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {plans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                selected={planId === plan.id}
-                onSelect={() => setPlanId(plan.id)}
-              />
+              <div key={plan.id} className="w-[84%] max-w-sm shrink-0 snap-center sm:w-[48%]">
+                <PlanCard
+                  plan={plan}
+                  selected={planId === plan.id}
+                  onSelect={() => setPlanId(plan.id)}
+                />
+              </div>
             ))}
           </div>
         </section>

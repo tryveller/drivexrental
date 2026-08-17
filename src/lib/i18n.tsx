@@ -75,6 +75,36 @@ const DICT = {
     hi: "पिकअप हब चुनें",
     kn: "ಪಿಕ್‌ಅಪ್ ಹಬ್ ಆಯ್ಕೆ ಮಾಡಿ",
   },
+  hubsNearYou: {
+    en: "Hubs near you",
+    hi: "आपके नज़दीकी हब",
+    kn: "ನಿಮ್ಮ ಹತ್ತಿರದ ಹಬ್‌ಗಳು",
+  },
+  hubsIntro: {
+    en: "These are the parking hubs closest to you. Open the map to see exactly where the bikes are parked, then pick a hub.",
+    hi: "ये आपके सबसे नज़दीकी पार्किंग हब हैं। बाइक कहाँ खड़ी हैं यह देखने के लिए मैप खोलें, फिर हब चुनें।",
+    kn: "ಇವು ನಿಮ್ಮ ಹತ್ತಿರದ ಪಾರ್ಕಿಂಗ್ ಹಬ್‌ಗಳು. ಬೈಕ್‌ಗಳು ಎಲ್ಲಿ ನಿಲ್ಲಿಸಿವೆ ಎಂದು ನೋಡಲು ಮ್ಯಾಪ್ ತೆರೆಯಿರಿ, ನಂತರ ಹಬ್ ಆಯ್ಕೆ ಮಾಡಿ.",
+  },
+  openInMaps: {
+    en: "Open in Google Maps",
+    hi: "Google Maps में खोलें",
+    kn: "Google Maps ನಲ್ಲಿ ತೆರೆಯಿರಿ",
+  },
+  bikesAtHub: {
+    en: "Bikes standing at this hub",
+    hi: "इस हब पर खड़ी बाइक",
+    kn: "ಈ ಹಬ್‌ನಲ್ಲಿ ನಿಂತಿರುವ ಬೈಕ್‌ಗಳು",
+  },
+  swipePlans: {
+    en: "Swipe sideways to compare daily, weekly, monthly and rent-to-own prices, then tap to select.",
+    hi: "डेली, वीकली, मंथली और रेंट-टू-ओन कीमतें देखने के लिए साइड में स्वाइप करें, फिर चुनने के लिए टैप करें।",
+    kn: "ಡೇಲಿ, ವೀಕ್ಲಿ, ಮಂತ್ಲಿ ಮತ್ತು ರೆಂಟ್-ಟು-ಓನ್ ಬೆಲೆ ಹೋಲಿಸಲು ಪಕ್ಕಕ್ಕೆ ಸ್ವೈಪ್ ಮಾಡಿ, ನಂತರ ಆಯ್ಕೆ ಮಾಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ.",
+  },
+  awayFromYou: {
+    en: "away from you",
+    hi: "आपसे दूर",
+    kn: "ನಿಮ್ಮಿಂದ ದೂರ",
+  },
   noHubStock: {
     en: "No hub near you has this bike right now. Try another model.",
     hi: "अभी आपके नज़दीकी किसी हब में यह बाइक नहीं है। दूसरा मॉडल देखें।",

@@ -1015,7 +1015,7 @@ export type Database = {
         | "CANCELLED"
         | "REFUND_PENDING"
         | "REFUNDED"
-      plan_type: "WEEKLY" | "MONTHLY" | "RTO"
+      plan_type: "DAILY" | "WEEKLY" | "MONTHLY" | "RTO"
       service_status:
         | "DUE"
         | "BOOKED"
@@ -1219,7 +1219,7 @@ export const Constants = {
         "REFUND_PENDING",
         "REFUNDED",
       ],
-      plan_type: ["WEEKLY", "MONTHLY", "RTO"],
+      plan_type: ["DAILY", "WEEKLY", "MONTHLY", "RTO"],
       service_status: [
         "DUE",
         "BOOKED",

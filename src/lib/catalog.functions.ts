@@ -15,7 +15,7 @@ export type CatalogHub = {
 export type CatalogPlan = {
   id: string;
   model_id: string | null;
-  plan_type: "WEEKLY" | "MONTHLY" | "RTO";
+  plan_type: "DAILY" | "WEEKLY" | "MONTHLY" | "RTO";
   vehicle_condition: "NEW" | "REFURBISHED";
   billing_period: string;
   rental_amount: number;

@@ -1,7 +1,7 @@
 // Pure, isomorphic commercial calculations. All values come from plan
 // configuration rows in the database — nothing here is a hard-coded price.
 
-export type PlanType = "WEEKLY" | "MONTHLY" | "RTO";
+export type PlanType = "DAILY" | "WEEKLY" | "MONTHLY" | "RTO";
 
 export type PlanConfig = {
   id: string;

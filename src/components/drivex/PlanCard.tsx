@@ -15,21 +15,23 @@ export function PlanCard({
 }) {
   const quote = buildQuote(plan);
   const title =
-    plan.plan_type === "WEEKLY"
-      ? "Weekly rental"
-      : plan.plan_type === "MONTHLY"
-        ? "Monthly rental"
-        : "Rent to own";
+    plan.plan_type === "DAILY"
+      ? "Daily rental"
+      : plan.plan_type === "WEEKLY"
+        ? "Weekly rental"
+        : plan.plan_type === "MONTHLY"
+          ? "Monthly rental"
+          : "Rent to own";
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        "w-full rounded-2xl border p-4 text-left transition-colors",
+        "flex h-full w-full flex-col rounded-2xl border p-4 text-left transition-colors",
         selected
-          ? "border-primary bg-primary/5 ring-1 ring-primary"
-          : "border-border bg-card hover:border-primary/40",
+          ? "border-primary bg-primary/10 ring-1 ring-primary"
+          : "border-border bg-card/80 backdrop-blur hover:border-primary/40",
       )}
     >
       <div className="flex items-start justify-between gap-3">
