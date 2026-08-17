@@ -24,6 +24,7 @@ import { useRiderSession } from "@/hooks/useRiderSession";
 import { getCatalog } from "@/lib/catalog.functions";
 import {
   acceptAgreement,
+  changePickupDate,
   checkInAtHub,
   confirmHandover,
   createBooking,
@@ -36,7 +37,13 @@ import {
   submitEligibility,
   submitHubKyc,
 } from "@/lib/booking.functions";
-import { OTHER_POSSIBLE_CHARGE_KEYS, buildQuote } from "@/lib/pricing";
+import {
+  MAX_PICKUP_SHIFT_DAYS,
+  OTHER_POSSIBLE_CHARGE_KEYS,
+  buildQuote,
+  computeDuration,
+  slotLabelKey,
+} from "@/lib/pricing";
 import { longDate, modelTitle, rupees } from "@/lib/format";
 import { useLanguage, type TKey } from "@/lib/i18n";
 
@@ -127,7 +134,15 @@ function JourneyPage() {
     const raw = sessionStorage.getItem("drivex.selection");
     setBootstrapped(true);
     if (!raw) return;
-    const selection = JSON.parse(raw) as { modelId: string; hubId: string; planId: string };
+    const selection = JSON.parse(raw) as {
+      modelId: string;
+      hubId: string;
+      planId: string;
+      pickupOn?: string;
+      pickupSlot?: string;
+      dropoffOn?: string;
+      dropoffSlot?: string;
+    };
     sessionStorage.removeItem("drivex.selection");
     createBooking({ data: selection })
       .then(() => queryClient.invalidateQueries({ queryKey: ["journey"] }))
@@ -178,7 +193,13 @@ function JourneyPage() {
     );
   }
 
-  const quote = buildQuote(plan);
+  const duration = computeDuration(
+    booking.pickup_on,
+    booking.pickup_slot,
+    booking.dropoff_on,
+    booking.dropoff_slot,
+  );
+  const quote = buildQuote(plan, duration);
 
   return (
     <AppShell subtitle={t("subtitleBooking")}>
@@ -206,6 +227,17 @@ function JourneyPage() {
           </p>
         )}
       </header>
+
+      {duration && (
+        <BookingDatesCard
+          booking={booking}
+          perDay={quote.perDay}
+          total={quote.totalInitialLiability}
+          days={duration.days}
+          extraHours={duration.extraHours}
+          onChanged={refresh}
+        />
+      )}
 
       <div className="mt-5 space-y-4">
         {step === "ELIGIBILITY" && (
