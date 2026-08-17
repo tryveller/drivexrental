@@ -3,6 +3,7 @@ import type { CatalogModel, CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore } from "@/lib/pricing";
 import { modelTitle, rupees, shortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 import jupiter from "@/assets/bike-jupiter.jpg";
 import radeon from "@/assets/bike-radeon.jpg";
 import sport from "@/assets/bike-sport.jpg";
@@ -36,6 +37,7 @@ export function BikeCard({
   onSelect: () => void;
 }) {
   const condition = computeConditionScore(vehicle);
+  const { t } = useLanguage();
 
   return (
     <button
@@ -61,7 +63,7 @@ export function BikeCard({
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">
           <ShieldCheck className="h-3 w-3" />
           {condition.score}
-          <span className="font-medium opacity-90">· {condition.label}</span>
+          <span className="font-medium opacity-90">· {t(condition.labelKey)}</span>
         </span>
         <div className="absolute inset-x-3 bottom-2 flex items-end justify-between gap-2">
           <span className="text-sm font-semibold">{modelTitle(model.brand, model.name)}</span>
@@ -79,14 +81,14 @@ export function BikeCard({
       <div className="flex items-center gap-3 px-3 pb-3 pt-2 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1">
           <Wrench className="h-3 w-3 text-primary" />
-          Serviced {shortDate(vehicle.last_service_date)}
+          {t("serviced", { date: shortDate(vehicle.last_service_date) })}
         </span>
         <span className="inline-flex items-center gap-1">
           <Gauge className="h-3 w-3 text-primary" />
           {vehicle.odometer_km.toLocaleString("en-IN")} km
         </span>
         <span className="ml-auto">
-          {vehicle.condition === "NEW" ? "New" : "Refurbished"}
+          {vehicle.condition === "NEW" ? t("condNew") : t("condRefurbished")}
         </span>
       </div>
     </button>
