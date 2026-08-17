@@ -41,10 +41,15 @@ export function AccessGate({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const result = await unlockPrototype({ data: { pin } });
+      if (!result.ok) {
+        setError(result.message ?? "That PIN is not correct.");
+        setPin("");
+        return;
+      }
       if (result.token) window.localStorage.setItem(STORAGE_KEY, result.token);
       setState("open");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That PIN is not correct.");
+      setError(err instanceof Error ? err.message : "Could not check the PIN. Try again.");
       setPin("");
     } finally {
       setSubmitting(false);
@@ -80,8 +85,9 @@ export function AccessGate({ children }: { children: ReactNode }) {
             <Input
               autoFocus
               value={pin}
-              onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(event) => setPin(event.target.value.trim().slice(0, 16))}
               inputMode="numeric"
+              autoComplete="off"
               placeholder="• • • •"
               aria-label="Access PIN"
               className="h-14 text-center text-2xl tracking-[0.5em]"
