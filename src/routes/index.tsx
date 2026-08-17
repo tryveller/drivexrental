@@ -294,9 +294,12 @@ function Discovery() {
         open={loginOpen}
         onOpenChange={setLoginOpen}
         onSignedIn={async () => {
-          const fresh = await account.refetch();
-          const booking = fresh.data?.current?.[0];
+          // The session hook updates asynchronously, so fetch directly instead
+          // of refetching a query that is still disabled.
+          const overview = await getAccountOverview();
+          const booking = overview.current[0];
           if (booking) openJourney(booking.status);
+          else void account.refetch();
         }}
       />
 
