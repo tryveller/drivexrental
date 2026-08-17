@@ -136,7 +136,7 @@ export const submitEligibility = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (!data.consent) throw new Error("We need your consent to run the eligibility check.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { track } = await import("./drivex.server");
+    const { track, isLikelyDl } = await import("./drivex.server");
 
     const dl = data.dlNumber.toUpperCase().replace(/[-\s]/g, "");
     const validDl = isLikelyDl(dl);
@@ -374,7 +374,7 @@ export const submitHubKyc = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { track } = await import("./drivex.server");
+    const { track, isLikelyDl } = await import("./drivex.server");
 
     const dl = data.dlNumber.toUpperCase().replace(/[-\s]/g, "");
     const validDl = isLikelyDl(dl);
