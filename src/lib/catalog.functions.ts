@@ -64,7 +64,8 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
   const [hubs, models, plans, vehicles] = await Promise.all([
     supabase
       .from("hubs")
-      .select("id, name, locality, address, latitude, longitude, opens_at, closes_at, phone"),
+      .select("id, name, locality, address, latitude, longitude, opens_at, closes_at, phone")
+      .eq("is_active", true),
     supabase
       .from("vehicle_models")
       .select("id, brand, name, fuel_type, engine, transmission, features"),
