@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { requestOtp, verifyOtp } from "@/lib/auth.functions";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [demoCode, setDemoCode] = useState<string | null>(null);
@@ -79,14 +81,12 @@ function AuthPage() {
         <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
           <ShieldCheck className="h-5 w-5 text-primary" />
         </span>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight">Verify your mobile number</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          We use your number to confirm your reservation and keep you updated about your bike.
-        </p>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight">{t("verifyTitle")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("verifyIntro")}</p>
 
-        <div className="mt-6 space-y-4 rounded-2xl border border-border bg-card p-4">
+        <div className="mt-6 space-y-4 rounded-2xl border border-border bg-card/70 p-4 backdrop-blur">
           <div className="space-y-1.5">
-            <Label htmlFor="phone">Mobile number</Label>
+            <Label htmlFor="phone">{t("mobileNumber")}</Label>
             <div className="flex gap-2">
               <span className="flex items-center rounded-md border border-border px-3 text-sm text-muted-foreground">
                 +91
@@ -96,7 +96,7 @@ function AuthPage() {
                 inputMode="numeric"
                 value={phone}
                 onChange={(event) => setPhone(event.target.value.replace(/\D/g, "").slice(0, 10))}
-                placeholder="10-digit number"
+                placeholder={t("tenDigits")}
               />
             </div>
           </div>
@@ -104,21 +104,21 @@ function AuthPage() {
           {demoCode === null ? (
             <Button className="w-full" onClick={sendCode} disabled={phone.length !== 10 || sending}>
               {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Send code
+              {t("sendCode")}
             </Button>
           ) : (
             <>
               <div className="space-y-1.5">
-                <Label htmlFor="code">Verification code</Label>
+                <Label htmlFor="code">{t("verificationCode")}</Label>
                 <Input
                   id="code"
                   inputMode="numeric"
                   value={code}
                   onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="6-digit code"
+                  placeholder={t("sixDigits")}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Demo code for this preview: <span className="font-medium">{demoCode}</span>
+                  {t("demoCode")} <span className="font-medium">{demoCode}</span>
                 </p>
               </div>
               <Button
@@ -127,10 +127,10 @@ function AuthPage() {
                 disabled={code.length !== 6 || verifying}
               >
                 {verifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Verify and continue
+                {t("verifyContinue")}
               </Button>
               <Button variant="ghost" className="w-full" onClick={sendCode} disabled={sending}>
-                Send a new code
+                {t("resend")}
               </Button>
             </>
           )}
