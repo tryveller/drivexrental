@@ -100,7 +100,7 @@ function Discovery() {
         best.set(vehicle.model_id, vehicle);
       }
     }
-    return [...best.entries()].flatMap(([id, vehicle]) => {
+    const rows = [...best.entries()].flatMap(([id, vehicle]) => {
       const model = models.find((item) => item.id === id);
       if (!model) return [];
       const bikeHub = hubs.find((item) => item.id === vehicle.hub_id) ?? null;
@@ -115,6 +115,10 @@ function Discovery() {
         { model, vehicle, hub: bikeHub, plans: modelPlans, cheapest, units: counts.get(id) ?? 0 },
       ];
     });
+    // Nearest parking hub first, so the deck opens with the closest bikes.
+    return rows.sort(
+      (a, b) => (a.hub?.distance ?? Number.POSITIVE_INFINITY) - (b.hub?.distance ?? Number.POSITIVE_INFINITY),
+    );
   }, [hubs, catalog.data]);
 
   const badges = useMemo(
