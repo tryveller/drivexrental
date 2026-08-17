@@ -27,4 +27,9 @@ export function conditionLabel(condition: string): string {
 }
 
 export const DRIVEX_SUPPORT_PHONE = "+918000000100";
+
+/** Some model names already include the brand (e.g. "TVS Jupiter"). */
+export function modelTitle(brand: string, name: string): string {
+  return name.toLowerCase().startsWith(brand.toLowerCase()) ? name : `${brand} ${name}`;
+}
 export const DRIVEX_WHATSAPP = "918000000100";
