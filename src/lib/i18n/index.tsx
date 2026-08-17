@@ -45,7 +45,7 @@ function resolve(lang: Lang, key: TKey): string {
   if (import.meta.env.DEV && entry) {
     console.warn(`[i18n] missing ${String(key)}.${lang} — falling back to English`);
   }
-  return entry?.en ?? String(key);
+  return entry?.["en"] ?? String(key);
 }
 
 const LanguageContext = createContext<Ctx>({

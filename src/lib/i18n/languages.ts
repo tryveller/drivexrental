@@ -48,5 +48,5 @@ export function isLang(value: unknown): value is Lang {
 }
 
 export function languageMeta(code: Lang): LanguageMeta {
-  return LANGUAGES.find((entry) => entry.code === code) ?? LANGUAGES[0];
+  return LANGUAGES.find((entry) => entry.code === code) ?? LANGUAGES[0]!;
 }
