@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Loader2, MapPin, Navigation, Clock } from "lucide-react";
+import { Loader2, MapPin, Navigation, Clock, Sparkles, ChevronRight } from "lucide-react";
 
 import { AppShell } from "@/components/drivex/AppShell";
 import { PlanCard } from "@/components/drivex/PlanCard";
@@ -195,18 +195,26 @@ function Discovery() {
               onSelect={() => {
                 setModelId(row.model.id);
                 setPlanId(null);
+                setShowRto(false);
+                setPlanSheetOpen(true);
               }}
             />
           ))}
         </div>
       </section>
 
-      {selected && (
-        <section className="mt-6">
-          <h2 className="text-sm font-semibold">{t("choosePlan")}</h2>
-          <div className="-mx-4 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <Dialog open={planSheetOpen && Boolean(selected)} onOpenChange={setPlanSheetOpen}>
+        <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
+          <DialogHeader className="px-5 pt-5 text-left">
+            <DialogTitle>{showRto ? t("rtoTitle") : t("choosePlan")}</DialogTitle>
+            <DialogDescription>
+              {selected ? modelTitle(selected.model.brand, selected.model.name) : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {plans.map((plan) => (
-              <div key={plan.id} className="w-[84%] max-w-sm shrink-0 snap-center sm:w-[48%]">
+              <div key={plan.id} className="w-[82%] max-w-sm shrink-0 snap-center">
                 <PlanCard
                   plan={plan}
                   selected={planId === plan.id}
@@ -215,16 +223,43 @@ function Discovery() {
               </div>
             ))}
           </div>
-        </section>
-      )}
 
-      {planId && (
-        <div className="sticky bottom-4 mt-6">
-          <Button className="w-full" size="lg" onClick={continueToReserve}>
-            {t("continueReserve")}
-          </Button>
-        </div>
-      )}
+          {rtoPlans.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowRto((value) => !value);
+                setPlanId(null);
+              }}
+              className="mx-5 mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-left transition-colors hover:border-primary/60"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">
+                  {showRto ? t("rtoBack") : t("rtoTitle")}
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {showRto ? t("choosePlan") : t("rtoHint")}
+                </span>
+              </span>
+              <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-primary" />
+            </button>
+          )}
+
+          <div className="border-t border-border bg-card/60 p-4">
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={!planId}
+              onClick={continueToReserve}
+            >
+              {t("continueReserve")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
