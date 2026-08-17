@@ -274,6 +274,31 @@ function Discovery() {
         </a>
       )}
 
+      {!session.userId && !session.loading ? (
+        <button
+          type="button"
+          onClick={() => setLoginOpen(true)}
+          className="mt-4 flex w-full items-center justify-between gap-2 rounded-2xl border border-dashed border-primary/40 bg-card/60 px-4 py-3 text-left backdrop-blur transition-colors hover:border-primary"
+        >
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold">{t("alreadyReserved")}</span>
+            <span className="mt-0.5 block text-[11px] text-muted-foreground">
+              {t("loadMyBookingBody")}
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
+        </button>
+      ) : null}
+
+      <PhoneLoginDialog
+        open={loginOpen}
+        onOpenChange={setLoginOpen}
+        onSignedIn={async () => {
+          const fresh = await account.refetch();
+          const booking = fresh.data?.current?.[0];
+          if (booking) openJourney(booking.status);
+        }}
+      />
 
       <Dialog open={planSheetOpen && Boolean(selected)} onOpenChange={setPlanSheetOpen}>
         <DialogContent className="max-h-[92vh] max-w-lg gap-0 overflow-y-auto p-0">
