@@ -159,28 +159,55 @@ function Discovery() {
 
   return (
     <AppShell>
-      <section className="relative overflow-hidden rounded-3xl border border-primary/25">
-        <img
-          src={bannerImage}
-          alt="Orange and black scooter lit by warm rim light"
-          width={1536}
-          height={768}
-          className="h-56 w-full object-cover sm:h-72"
+      <section className="flex items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold tracking-tight">{t("compareHint")}</h1>
+        <button
+          type="button"
+          onClick={clearLocation}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/40 bg-card/70 px-3 py-1.5 text-xs font-medium backdrop-blur"
+        >
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          {locationLabel}
+        </button>
+      </section>
+
+      <section className="mt-4">
+        <BikeDeck
+          items={bikes.map((row) => ({ key: row.model.id }))}
+          renderItem={(position) => {
+            const row = bikes[position];
+            if (!row) return null;
+            return (
+              <BikeCard
+                model={row.model}
+                vehicle={row.vehicle}
+                fromAmount={row.cheapest?.rental_amount ?? null}
+                fromPeriod={row.cheapest?.billing_period ?? null}
+                unitsReady={row.units}
+                distance={row.hub?.distance ?? null}
+                hubLocality={row.hub?.locality ?? null}
+                badges={badges[row.model.name] ?? []}
+                selected={modelId === row.model.id}
+                onSelect={() => {
+                  setModelId(row.model.id);
+                  setPlanId(null);
+                  setShowRto(false);
+                  setPlanSheetOpen(true);
+                }}
+              />
+            );
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/10" />
-        <div className="absolute inset-x-0 bottom-0 p-5">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {t("bannerHeadline")}
-          </h1>
-          <button
-            type="button"
-            onClick={clearLocation}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-background/60 px-3 py-1.5 text-xs font-medium backdrop-blur"
-          >
-            <MapPin className="h-3.5 w-3.5 text-primary" />
-            {locationLabel}
-          </button>
-        </div>
+        {bikes[0] ? (
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">
+            {bikes[0].hub?.distance !== null && bikes[0].hub
+              ? t("kmFromYou", {
+                  km: bikes[0].hub.distance ?? 0,
+                  place: location?.pinCode || locationLabel,
+                })
+              : t("allChecked")}
+          </p>
+        ) : null}
       </section>
 
       {hub && (
@@ -209,32 +236,6 @@ function Discovery() {
         </a>
       )}
 
-      <section className="mt-5">
-        <div className="mb-2 flex items-baseline justify-between gap-2">
-          <h2 className="text-sm font-semibold">{t("compareHint")}</h2>
-          <span className="text-[11px] text-muted-foreground">{t("allChecked")}</span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {bikes.map((row) => (
-            <BikeCard
-              key={row.model.id}
-              model={row.model}
-              vehicle={row.vehicle}
-              fromAmount={row.cheapest?.rental_amount ?? null}
-              fromPeriod={row.cheapest?.billing_period ?? null}
-              unitsReady={row.units}
-              badges={badges[row.model.name] ?? []}
-              selected={modelId === row.model.id}
-              onSelect={() => {
-                setModelId(row.model.id);
-                setPlanId(null);
-                setShowRto(false);
-                setPlanSheetOpen(true);
-              }}
-            />
-          ))}
-        </div>
-      </section>
 
       <Dialog open={planSheetOpen && Boolean(selected)} onOpenChange={setPlanSheetOpen}>
         <DialogContent className="max-h-[92vh] max-w-lg gap-0 overflow-y-auto p-0">
