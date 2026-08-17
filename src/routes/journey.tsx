@@ -430,6 +430,7 @@ function ActionButton<T>({
 }
 
 function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
+  const { t } = useLanguage();
   const [dlNumber, setDlNumber] = useState("");
   const [dlName, setDlName] = useState("");
   const [dlDob, setDlDob] = useState("");
@@ -468,10 +469,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             : "We'll need a closer look at the hub"
         }
         body={
-          <p className="text-sm text-muted-foreground">
-            This is an indication only. Your rental is confirmed after document verification at the
-            hub.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("eligibilityIndicative")}</p>
         }
       />
     );
@@ -483,10 +481,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       title="Optional: check your eligibility now"
       body={
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Share your licence details to see whether you're likely eligible before you travel. You
-            can skip this and complete everything at the hub instead.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("eligibilityHint")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="dl">Driving Licence number</Label>
