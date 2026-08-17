@@ -44,15 +44,25 @@ export type Database = {
       bookings: {
         Row: {
           agreement_accepted_at: string | null
+          billed_days: number | null
+          billed_extra_hours: number | null
           booking_code: string
           checked_in_at: string | null
           created_at: string
           customer_id: string
+          dropoff_on: string | null
+          dropoff_slot: string | null
           handover_confirmed_at: string | null
           hub_id: string
           id: string
           model_id: string
+          original_pickup_on: string | null
+          pickup_change_count: number
+          pickup_changed_at: string | null
+          pickup_on: string | null
+          pickup_slot: string | null
           plan_id: string
+          quoted_total: number | null
           rapido_coupon: string | null
           rejection_reason: string | null
           reservation_expires_at: string | null
@@ -63,15 +73,25 @@ export type Database = {
         }
         Insert: {
           agreement_accepted_at?: string | null
+          billed_days?: number | null
+          billed_extra_hours?: number | null
           booking_code?: string
           checked_in_at?: string | null
           created_at?: string
           customer_id: string
+          dropoff_on?: string | null
+          dropoff_slot?: string | null
           handover_confirmed_at?: string | null
           hub_id: string
           id?: string
           model_id: string
+          original_pickup_on?: string | null
+          pickup_change_count?: number
+          pickup_changed_at?: string | null
+          pickup_on?: string | null
+          pickup_slot?: string | null
           plan_id: string
+          quoted_total?: number | null
           rapido_coupon?: string | null
           rejection_reason?: string | null
           reservation_expires_at?: string | null
@@ -82,15 +102,25 @@ export type Database = {
         }
         Update: {
           agreement_accepted_at?: string | null
+          billed_days?: number | null
+          billed_extra_hours?: number | null
           booking_code?: string
           checked_in_at?: string | null
           created_at?: string
           customer_id?: string
+          dropoff_on?: string | null
+          dropoff_slot?: string | null
           handover_confirmed_at?: string | null
           hub_id?: string
           id?: string
           model_id?: string
+          original_pickup_on?: string | null
+          pickup_change_count?: number
+          pickup_changed_at?: string | null
+          pickup_on?: string | null
+          pickup_slot?: string | null
           plan_id?: string
+          quoted_total?: number | null
           rapido_coupon?: string | null
           rejection_reason?: string | null
           reservation_expires_at?: string | null
@@ -572,6 +602,7 @@ export type Database = {
           included_km: number
           is_active: boolean
           late_fee_per_day: number
+          late_return_fee: number
           maximum_duration_days: number | null
           minimum_duration_days: number
           model_id: string | null
@@ -592,6 +623,7 @@ export type Database = {
           included_km?: number
           is_active?: boolean
           late_fee_per_day?: number
+          late_return_fee?: number
           maximum_duration_days?: number | null
           minimum_duration_days?: number
           model_id?: string | null
@@ -612,6 +644,7 @@ export type Database = {
           included_km?: number
           is_active?: boolean
           late_fee_per_day?: number
+          late_return_fee?: number
           maximum_duration_days?: number | null
           minimum_duration_days?: number
           model_id?: string | null
