@@ -1,6 +1,17 @@
-// Rider-facing model specs. These are model-level facts (not per-vehicle
-// telemetry) that riders actually choose on: mileage, top speed, storage,
-// braking/handling. Kept in code so copy keys and numbers stay reviewable.
+// Rider-facing model specs. The numbers live on `vehicle_models` in the
+// database; this module only normalises them and computes comparative badges.
+// The FALLBACK below is a last-resort guard for a model row with blank specs.
+
+export type SpecSource = {
+  name: string;
+  mileage_kmpl?: number | null;
+  range_km?: number | null;
+  top_speed_kmph?: number | null;
+  storage_litres?: number | null;
+  kerb_weight_kg?: number | null;
+  safety_key?: string | null;
+  best_for_key?: string | null;
+};
 
 export type BikeSpec = {
   /** Fuel economy in kmpl, or null for electric models. */
@@ -17,57 +28,6 @@ export type BikeSpec = {
   bestForKey: string;
 };
 
-const SPECS: { match: string; spec: BikeSpec }[] = [
-  {
-    match: "jupiter",
-    spec: {
-      mileageKmpl: 56,
-      rangeKm: null,
-      topSpeedKmph: 82,
-      storageLitres: 33,
-      kerbWeightKg: 108,
-      safetyKey: "safetySbtTubeless",
-      bestForKey: "bestForErrands",
-    },
-  },
-  {
-    match: "radeon",
-    spec: {
-      mileageKmpl: 69,
-      rangeKm: null,
-      topSpeedKmph: 85,
-      storageLitres: 0,
-      kerbWeightKg: 112,
-      safetyKey: "safetySbtCushioned",
-      bestForKey: "bestForCommute",
-    },
-  },
-  {
-    match: "sport",
-    spec: {
-      mileageKmpl: 70,
-      rangeKm: null,
-      topSpeedKmph: 90,
-      storageLitres: 0,
-      kerbWeightKg: 110,
-      safetyKey: "safetySbtLight",
-      bestForKey: "bestForLongRides",
-    },
-  },
-  {
-    match: "orbiter",
-    spec: {
-      mileageKmpl: null,
-      rangeKm: 158,
-      topSpeedKmph: 65,
-      storageLitres: 34,
-      kerbWeightKg: 106,
-      safetyKey: "safetySbtTubeless",
-      bestForKey: "bestForNewRiders",
-    },
-  },
-];
-
 const FALLBACK: BikeSpec = {
   mileageKmpl: 60,
   rangeKm: null,
@@ -78,17 +38,25 @@ const FALLBACK: BikeSpec = {
   bestForKey: "bestForCommute",
 };
 
-export function bikeSpec(modelName: string): BikeSpec {
-  const key = modelName.toLowerCase();
-  return SPECS.find((row) => key.includes(row.match))?.spec ?? FALLBACK;
+export function bikeSpec(model: SpecSource): BikeSpec {
+  const hasRange = model.range_km !== null && model.range_km !== undefined;
+  return {
+    mileageKmpl: hasRange ? null : (model.mileage_kmpl ?? FALLBACK.mileageKmpl),
+    rangeKm: model.range_km ?? null,
+    topSpeedKmph: model.top_speed_kmph ?? FALLBACK.topSpeedKmph,
+    storageLitres: model.storage_litres ?? FALLBACK.storageLitres,
+    kerbWeightKg: model.kerb_weight_kg ?? FALLBACK.kerbWeightKg,
+    safetyKey: model.safety_key ?? FALLBACK.safetyKey,
+    bestForKey: model.best_for_key ?? FALLBACK.bestForKey,
+  };
 }
 
 /**
  * "Best in class" badges, computed across only the models actually on offer at
  * the hub — so a badge always means something the rider can compare right now.
  */
-export function bestInClass(modelNames: string[]): Record<string, string[]> {
-  const rows = modelNames.map((name) => ({ name, spec: bikeSpec(name) }));
+export function bestInClass(models: SpecSource[]): Record<string, string[]> {
+  const rows = models.map((model) => ({ name: model.name, spec: bikeSpec(model) }));
   const result: Record<string, string[]> = {};
   const add = (name: string, key: string) => {
     result[name] = [...(result[name] ?? []), key];
