@@ -333,7 +333,7 @@ export const payReservation = createServerFn({ method: "POST" })
       .update({
         status: "RESERVED",
         vehicle_id: vehicleId,
-        reservation_expires_at: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+        reservation_expires_at: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
       })
       .eq("id", booking.id);
 

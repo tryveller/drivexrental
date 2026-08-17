@@ -15,9 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { modelTitle } from "@/lib/format";
+import { modelTitle, rupees } from "@/lib/format";
 import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
-import { computeConditionScore, computeDuration, distanceKm } from "@/lib/pricing";
+import { computeConditionScore, computeDuration, distanceKm, planDayRate } from "@/lib/pricing";
 import { bestInClass } from "@/lib/bike-specs";
 import { useLanguage } from "@/lib/i18n";
 import { useRiderLocation } from "@/lib/location";
@@ -233,31 +233,60 @@ function Discovery() {
       <Dialog open={planSheetOpen && Boolean(selected)} onOpenChange={setPlanSheetOpen}>
         <DialogContent className="max-h-[92vh] max-w-lg gap-0 overflow-y-auto p-0">
           <DialogHeader className="px-5 pt-5 text-left">
-            <DialogTitle>{showRto ? t("rtoTitle") : t("choosePlan")}</DialogTitle>
+            <DialogTitle>
+              {needsDates ? t("datesTitle") : showRto ? t("rtoTitle") : t("choosePlan")}
+            </DialogTitle>
             <DialogDescription>
               {selected ? modelTitle(selected.model.brand, selected.model.name) : ""}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {plans.map((plan) => (
-              <div key={plan.id} className="w-[82%] max-w-sm shrink-0 snap-center">
-                <PlanCard
-                  plan={plan}
-                  selected={planId === plan.id}
-                  onSelect={() => setPlanId(plan.id)}
-                />
-              </div>
-            ))}
-          </div>
+          {!needsDates && (
+            <div className="mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {plans.map((plan) => (
+                <div key={plan.id} className="w-[82%] max-w-sm shrink-0 snap-center">
+                  <PlanCard
+                    plan={plan}
+                    selected={planId === plan.id}
+                    onSelect={() => setPlanId(plan.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {needsDates && chosenPlan && (
-            <div className="px-5 pb-4">
+            <div className="px-5 pb-4 pt-3">
+              <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
+                <span className="min-w-0 text-sm">
+                  <span className="block font-semibold">
+                    {t("selectedPlanLabel", {
+                      plan: t(
+                        chosenPlan.plan_type === "DAILY"
+                          ? "planDaily"
+                          : chosenPlan.plan_type === "WEEKLY"
+                            ? "planWeekly"
+                            : "planMonthly",
+                      ),
+                    })}
+                  </span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    {t("perDayApprox", { amount: rupees(planDayRate(chosenPlan)) })}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPlanId(null)}
+                  className="shrink-0 text-xs font-semibold text-primary underline"
+                >
+                  {t("changePlanAction")}
+                </button>
+              </div>
               <DatesStep plan={chosenPlan} value={dates} onChange={setDates} />
             </div>
           )}
 
-          {rtoPlans.length > 0 && (
+          {!needsDates && rtoPlans.length > 0 && (
             <button
               type="button"
               onClick={() => {
