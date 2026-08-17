@@ -24,14 +24,19 @@ export const unlockPrototype = createServerFn({ method: "POST" })
 
     const wait = access.cooldownRemaining(clientKey);
     if (wait > 0) {
-      throw new Error(`Too many attempts. Try again in ${Math.ceil(wait / 1000)}s.`);
+      return {
+        ok: false as const,
+        enabled: true,
+        token: null,
+        message: `Too many attempts. Try again in ${Math.ceil(wait / 1000)}s.`,
+      };
     }
 
     if (!access.pinMatches(data.pin)) {
       access.recordFailure(clientKey);
-      throw new Error("That PIN is not correct.");
+      return { ok: false as const, enabled: true, token: null, message: "That PIN is not correct." };
     }
 
     access.clearFailures(clientKey);
-    return { token: await access.issueToken(), enabled: true };
+    return { ok: true as const, enabled: true, token: await access.issueToken(), message: null };
   });
