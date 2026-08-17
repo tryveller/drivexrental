@@ -353,6 +353,8 @@ export const payReservation = createServerFn({ method: "POST" })
 export const setTravelMode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { bookingId: string; mode: "RAPIDO" | "SELF" }) => input)
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookingId: string; mode: "RAPIDO" | "SELF" }) => input)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
