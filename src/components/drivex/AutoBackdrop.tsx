@@ -10,7 +10,7 @@ export function AutoBackdrop() {
 
       {/* headlight glows */}
       <div className="absolute -left-24 -top-32 h-[26rem] w-[26rem] rounded-full bg-primary/20 blur-[120px]" />
-      <div className="absolute -right-32 top-1/3 h-[22rem] w-[22rem] rounded-full bg-accent/25 blur-[130px]" />
+      <div className="absolute -right-32 top-1/3 h-[22rem] w-[22rem] rounded-full bg-primary/15 blur-[130px]" />
       <div className="absolute bottom-[-8rem] left-1/4 h-[20rem] w-[20rem] rounded-full bg-primary/10 blur-[140px]" />
 
       <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice">

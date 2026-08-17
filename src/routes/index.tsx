@@ -1,20 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Loader2, MapPin, Navigation, Bike as BikeIcon } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2, MapPin, Bike as BikeIcon } from "lucide-react";
 
 import { AppShell } from "@/components/drivex/AppShell";
 import { PlanCard } from "@/components/drivex/PlanCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { getCatalog } from "@/lib/catalog.functions";
-import { saveLocation } from "@/lib/auth.functions";
 import { distanceKm } from "@/lib/pricing";
 import { modelTitle, rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { useRiderLocation } from "@/lib/location";
+import bannerImage from "@/assets/drivex-banner.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -36,22 +35,19 @@ export const Route = createFileRoute("/")({
   component: Discovery,
 });
 
-const LOCALITIES = ["Koramangala", "Indiranagar", "Whitefield", "Jayanagar", "HSR Layout"];
-
 function Discovery() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { location, clearLocation } = useRiderLocation();
   const catalog = useQuery({ queryKey: ["catalog"], queryFn: () => getCatalog() });
 
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [locality, setLocality] = useState("");
-  const [pinCode, setPinCode] = useState("");
-  const [locating, setLocating] = useState(false);
   const [modelId, setModelId] = useState<string | null>(null);
   const [hubId, setHubId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
 
-  const located = Boolean(coords || locality || pinCode);
+  const coords = location?.coords ?? null;
+  const locality = location?.locality ?? "";
+  const locationLabel = locality || location?.pinCode || "Near me";
 
   const hubs = useMemo(() => {
     const list = catalog.data?.hubs ?? [];
@@ -95,26 +91,6 @@ function Discovery() {
   const modelHubs = hubs.filter((hub) => selectedModel?.hubsWithStock.includes(hub.id));
   const plans = selectedModel?.plans ?? [];
 
-  function useMyLocation() {
-    if (!("geolocation" in navigator)) {
-      toast.error("Your browser can't share location. Pick your area instead.");
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCoords({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setLocating(false);
-        void saveLocation({ data: {} });
-      },
-      () => {
-        setLocating(false);
-        toast.error("We couldn't get your location. Pick your area instead.");
-      },
-      { timeout: 8000 },
-    );
-  }
-
   function continueToReserve() {
     if (!modelId || !hubId || !planId) return;
     sessionStorage.setItem(
@@ -136,51 +112,43 @@ function Discovery() {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-semibold tracking-tight">{t("discoveryTitle")}</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{t("discoveryIntro")}</p>
-
-      <section className="mt-6 rounded-2xl border border-border bg-card/70 p-4 backdrop-blur">
-        <h2 className="text-sm font-semibold">{t("whereRide")}</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button variant="outline" onClick={useMyLocation} disabled={locating}>
-            {locating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Navigation className="mr-2 h-4 w-4" />
-            )}
-            {t("useMyLocation")}
-          </Button>
-          <Input
-            value={pinCode}
-            onChange={(event) => setPinCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder={t("pinPlaceholder")}
-            inputMode="numeric"
-            className="w-40"
-          />
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {LOCALITIES.map((area) => (
-            <button
-              key={area}
-              type="button"
-              onClick={() => setLocality(area === locality ? "" : area)}
-              className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                locality === area
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border hover:bg-secondary",
-              )}
-            >
-              {area}
-            </button>
-          ))}
-        </div>
-        {!located && (
-          <p className="mt-3 text-xs text-muted-foreground">
-            {t("locationPrivacy")}
+      <section className="relative overflow-hidden rounded-3xl border border-primary/25">
+        <img
+          src={bannerImage}
+          alt="Orange and black scooter lit by warm rim light"
+          width={1536}
+          height={768}
+          className="h-52 w-full object-cover sm:h-64"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/10" />
+        <div className="absolute inset-x-0 bottom-0 p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+            DriveX · {locationLabel}
           </p>
-        )}
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight sm:text-3xl">
+            {t("bannerHeadline")}
+          </h1>
+          <p className="mt-1.5 max-w-md text-xs text-muted-foreground sm:text-sm">
+            {t("bannerSub")}
+          </p>
+        </div>
       </section>
+
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/70 px-4 py-3 backdrop-blur">
+        <span className="flex items-center gap-2 text-sm">
+          <MapPin className="h-4 w-4 text-primary" />
+          <span className="font-medium">{locationLabel}</span>
+        </span>
+        <button
+          type="button"
+          onClick={clearLocation}
+          className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {t("changeLocation")}
+        </button>
+      </div>
+
+      <p className="mt-4 text-sm text-muted-foreground">{t("discoveryIntro")}</p>
 
       <section className="mt-6">
         <h2 className="text-sm font-semibold">{t("bikesNearYou")}</h2>

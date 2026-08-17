@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { LanguageGate } from "@/components/drivex/LanguageGate";
+import { LocationProvider } from "@/lib/location";
+import { LocationGate } from "@/components/drivex/LocationGate";
 
 function NotFoundComponent() {
   return (
@@ -129,10 +131,14 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <LanguageGate>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </LanguageGate>
+        <LocationProvider>
+          <LanguageGate>
+            <LocationGate>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+            </LocationGate>
+          </LanguageGate>
+        </LocationProvider>
         <Toaster />
       </LanguageProvider>
     </QueryClientProvider>
