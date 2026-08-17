@@ -564,6 +564,7 @@ function HubKycStep({
   actionRequired: string | null;
   onDone: () => void;
 }) {
+  const { t } = useLanguage();
   const [dlNumber, setDlNumber] = useState("");
   const [dlName, setDlName] = useState("");
   const [addressProof, setAddressProof] = useState("");
@@ -597,9 +598,7 @@ function HubKycStep({
               {actionRequired}
             </p>
           )}
-          <p className="text-sm text-muted-foreground">
-            Our staff will capture these with you. Nothing is charged at this step.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("kycHint")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="hub-dl">Driving Licence number</Label>
