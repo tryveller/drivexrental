@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/drivex/AppShell";
+import { PageLoader } from "@/components/drivex/PageLoader";
 import { CaptureField } from "@/components/drivex/CaptureField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
