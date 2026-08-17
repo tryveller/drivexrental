@@ -95,7 +95,10 @@ export function LocationGate({ children }: { children: ReactNode }) {
           variant={canContinue ? "default" : "secondary"}
           disabled={!canContinue}
           onClick={() => {
-            setLocation({ locality: locality || undefined, pinCode: pinCode || undefined });
+            const next: Record<string, string> = {};
+            if (locality) next["locality"] = locality;
+            if (pinCode) next["pinCode"] = pinCode;
+            setLocation(next);
             void saveLocation({ data: { locality, pinCode } });
           }}
         >
