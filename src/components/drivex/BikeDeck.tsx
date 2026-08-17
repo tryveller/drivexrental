@@ -63,7 +63,7 @@ export function BikeDeck({
             const isTop = offset === 0;
             return (
               <div
-                key={items[cardIndex].key}
+                key={items[cardIndex]?.key ?? cardIndex}
                 className={cn(
                   "transition-transform duration-300 ease-out",
                   isTop ? "relative z-30" : "absolute inset-x-0 top-0",
