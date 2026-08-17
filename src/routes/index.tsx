@@ -59,8 +59,9 @@ function Discovery() {
   // picked their area manually instead of sharing GPS.
   const coords =
     location?.coords ??
-    (location?.pinCode ? PIN_COORDS[location.pinCode] ?? null : null) ??
-    (location?.locality ? LOCALITY_COORDS[location.locality] ?? null : null);
+    (location?.pinCode ? PIN_COORDS[location.pinCode] : undefined) ??
+    (location?.locality ? LOCALITY_COORDS[location.locality] : undefined) ??
+    null;
   const locality = location?.locality ?? "";
   const locationLabel = locality || location?.pinCode || t("nearMe");
 
