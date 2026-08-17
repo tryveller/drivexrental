@@ -526,11 +526,11 @@ export const payFinalAmount = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
-    const { buildQuote } = await import("./pricing");
+    const { buildQuote, computeDuration } = await import("./pricing");
 
     const { data: booking } = await supabaseAdmin
       .from("bookings")
-      .select("id, plan_id, status")
+      .select("id, plan_id, status, pickup_on, pickup_slot, dropoff_on, dropoff_slot")
       .eq("id", data.bookingId)
       .eq("customer_id", context.userId)
       .single();
@@ -555,7 +555,13 @@ export const payFinalAmount = createServerFn({ method: "POST" })
       ["RENT", "SECURITY_DEPOSIT", "RTO_DOWNPAYMENT"].includes(row.entry_type),
     );
 
-    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) });
+    const duration = computeDuration(
+      booking.pickup_on,
+      booking.pickup_slot,
+      booking.dropoff_on,
+      booking.dropoff_slot,
+    );
+    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration);
     const amountDue = quote.totalInitialLiability - reservationCredit;
 
     if (alreadySettled) {
@@ -621,8 +627,10 @@ export const payFinalAmount = createServerFn({ method: "POST" })
     } else {
       entries.push({
         entry_type: "RENT",
-        amount: plan.rental_amount,
-        note: `First ${plan.billing_period} rent`,
+        amount: quote.rentAmount,
+        note: duration
+          ? `Rent for ${duration.days} day(s)${duration.extraHours ? ` + ${duration.extraHours} hr` : ""}`
+          : `First ${plan.billing_period} rent`,
       });
       if (plan.deposit_amount > 0)
         entries.push({
