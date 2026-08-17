@@ -36,7 +36,7 @@ import {
   submitHubKyc,
 } from "@/lib/booking.functions";
 import { OTHER_POSSIBLE_CHARGES, buildQuote } from "@/lib/pricing";
-import { longDate, rupees } from "@/lib/format";
+import { longDate, modelTitle, rupees } from "@/lib/format";
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
@@ -186,7 +186,7 @@ function JourneyPage() {
           <div>
             <p className="text-xs text-muted-foreground">Booking {booking.booking_code}</p>
             <h1 className="mt-1 text-lg font-semibold">
-              {model.brand} {model.name}
+              {modelTitle(model.brand, model.name)}
             </h1>
             <p className="text-sm text-muted-foreground">
               {hub.name} · {plan.plan_type === "RTO" ? "Rent to own" : `${rupees(plan.rental_amount)} / ${plan.billing_period}`}

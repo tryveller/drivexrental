@@ -30,7 +30,7 @@ import {
   requestReturn,
 } from "@/lib/rental.functions";
 import { SERVICE_INTERVAL_DAYS, SERVICE_INTERVAL_KM } from "@/lib/pricing";
-import { longDate, rupees, shortDate } from "@/lib/format";
+import { longDate, modelTitle, rupees, shortDate } from "@/lib/format";
 
 export const Route = createFileRoute("/my-bike")({
   head: () => ({
@@ -111,7 +111,7 @@ function MyBikePage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold">
-              {model?.brand} {model?.name}
+              {model ? modelTitle(model.brand, model.name) : "Your bike"}
             </h1>
             <p className="text-sm text-muted-foreground">
               {vehicle.registration_number} ·{" "}

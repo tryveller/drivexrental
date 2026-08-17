@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { getCatalog } from "@/lib/catalog.functions";
 import { saveLocation } from "@/lib/auth.functions";
 import { distanceKm } from "@/lib/pricing";
-import { rupees } from "@/lib/format";
+import { modelTitle, rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -216,9 +216,7 @@ function Discovery() {
                     {soldOut ? "Not available" : `${total} available`}
                   </Badge>
                 </div>
-                <p className="mt-3 font-semibold">
-                  {model.brand} {model.name}
-                </p>
+                <p className="mt-3 font-semibold">{modelTitle(model.brand, model.name)}</p>
                 <p className="text-xs text-muted-foreground">
                   {model.fuel_type} · {model.transmission}
                   {model.engine ? ` · ${model.engine}` : ""}
