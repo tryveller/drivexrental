@@ -37,6 +37,7 @@ import {
 } from "@/lib/booking.functions";
 import { OTHER_POSSIBLE_CHARGES, buildQuote } from "@/lib/pricing";
 import { longDate, modelTitle, rupees } from "@/lib/format";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
@@ -103,6 +104,7 @@ function stepFor(status: string | undefined): Step {
 
 function JourneyPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const session = useRiderSession();
   const queryClient = useQueryClient();
   const [bootstrapped, setBootstrapped] = useState(false);
@@ -139,7 +141,7 @@ function JourneyPage() {
     return (
       <AppShell subtitle="Your booking">
         <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading your booking…
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loadingBooking")}
         </div>
       </AppShell>
     );
@@ -245,7 +247,7 @@ function JourneyPage() {
                   {hub.name}, {hub.address}. Open {hub.opens_at}–{hub.closes_at}.
                 </p>
                 <p className="mt-2">
-                  Carry your original Driving Licence and an address proof for verification.
+                  {t("carryDocs")}
                 </p>
               </div>
             }
@@ -280,8 +282,7 @@ function JourneyPage() {
                   </p>
                 )}
                 <p>
-                  Tap below once you reach {hub.name}. Our staff will start your document
-                  verification.
+                  {t("reachHubHint")} ({hub.name})
                 </p>
               </div>
             }
@@ -315,11 +316,7 @@ function JourneyPage() {
             title="Collect your bike"
             body={
               <div className="text-sm text-muted-foreground">
-                <p>
-                  Our staff will walk around the bike with you and record its condition, fuel level
-                  and accessories. Check the photos and note anything you disagree with before you
-                  confirm.
-                </p>
+                <p>{t("handoverHint")}</p>
               </div>
             }
             action={
@@ -433,6 +430,7 @@ function ActionButton<T>({
 }
 
 function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
+  const { t } = useLanguage();
   const [dlNumber, setDlNumber] = useState("");
   const [dlName, setDlName] = useState("");
   const [dlDob, setDlDob] = useState("");
@@ -471,10 +469,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             : "We'll need a closer look at the hub"
         }
         body={
-          <p className="text-sm text-muted-foreground">
-            This is an indication only. Your rental is confirmed after document verification at the
-            hub.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("eligibilityIndicative")}</p>
         }
       />
     );
@@ -486,10 +481,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       title="Optional: check your eligibility now"
       body={
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Share your licence details to see whether you're likely eligible before you travel. You
-            can skip this and complete everything at the hub instead.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("eligibilityHint")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="dl">Driving Licence number</Label>
@@ -572,6 +564,7 @@ function HubKycStep({
   actionRequired: string | null;
   onDone: () => void;
 }) {
+  const { t } = useLanguage();
   const [dlNumber, setDlNumber] = useState("");
   const [dlName, setDlName] = useState("");
   const [addressProof, setAddressProof] = useState("");
@@ -605,9 +598,7 @@ function HubKycStep({
               {actionRequired}
             </p>
           )}
-          <p className="text-sm text-muted-foreground">
-            Our staff will capture these with you. Nothing is charged at this step.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("kycHint")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="hub-dl">Driving Licence number</Label>

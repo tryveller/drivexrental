@@ -14,6 +14,7 @@ import { saveLocation } from "@/lib/auth.functions";
 import { distanceKm } from "@/lib/pricing";
 import { modelTitle, rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -39,6 +40,7 @@ const LOCALITIES = ["Koramangala", "Indiranagar", "Whitefield", "Jayanagar", "HS
 
 function Discovery() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const catalog = useQuery({ queryKey: ["catalog"], queryFn: () => getCatalog() });
 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -126,24 +128,19 @@ function Discovery() {
     return (
       <AppShell>
         <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Finding bikes near you…
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("findingBikes")}
         </div>
       </AppShell>
     );
   }
 
   return (
-    <AppShell subtitle="Rent a bike near you">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Rent a two-wheeler from a hub near you
-      </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Choose your bike and plan, pay ₹199 to reserve it, then finish verification at the hub
-        and ride away the same day.
-      </p>
+    <AppShell>
+      <h1 className="text-2xl font-semibold tracking-tight">{t("discoveryTitle")}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{t("discoveryIntro")}</p>
 
-      <section className="mt-6 rounded-2xl border border-border bg-card p-4">
-        <h2 className="text-sm font-semibold">Where do you want to ride?</h2>
+      <section className="mt-6 rounded-2xl border border-border bg-card/70 p-4 backdrop-blur">
+        <h2 className="text-sm font-semibold">{t("whereRide")}</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant="outline" onClick={useMyLocation} disabled={locating}>
             {locating ? (
@@ -151,12 +148,12 @@ function Discovery() {
             ) : (
               <Navigation className="mr-2 h-4 w-4" />
             )}
-            Use my location
+            {t("useMyLocation")}
           </Button>
           <Input
             value={pinCode}
             onChange={(event) => setPinCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="Or enter PIN code"
+            placeholder={t("pinPlaceholder")}
             inputMode="numeric"
             className="w-40"
           />
@@ -180,13 +177,13 @@ function Discovery() {
         </div>
         {!located && (
           <p className="mt-3 text-xs text-muted-foreground">
-            We use your area only to show hubs and bikes available near you.
+            {t("locationPrivacy")}
           </p>
         )}
       </section>
 
       <section className="mt-6">
-        <h2 className="text-sm font-semibold">Bikes available near you</h2>
+        <h2 className="text-sm font-semibold">{t("bikesNearYou")}</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {availability.map(({ model, total, cheapest }) => {
             const soldOut = total === 0;
@@ -204,7 +201,7 @@ function Discovery() {
                   "rounded-2xl border p-4 text-left transition-colors",
                   modelId === model.id
                     ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "border-border bg-card hover:border-primary/40",
+                    : "border-border bg-card/70 backdrop-blur hover:border-primary/40",
                   soldOut && "opacity-60",
                 )}
               >
@@ -226,7 +223,7 @@ function Discovery() {
                 </p>
                 {soldOut && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    All bikes of this model are currently rented out near you.
+                    {t("soldOut")}
                   </p>
                 )}
               </button>
@@ -237,10 +234,10 @@ function Discovery() {
 
       {selectedModel && (
         <section className="mt-6">
-          <h2 className="text-sm font-semibold">Pick your pickup hub</h2>
+          <h2 className="text-sm font-semibold">{t("pickHub")}</h2>
           {modelHubs.length === 0 ? (
-            <p className="mt-3 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
-              No hub near you has this bike right now. Try another model.
+            <p className="mt-3 rounded-2xl border border-border bg-card/70 p-4 text-sm text-muted-foreground backdrop-blur">
+              {t("noHubStock")}
             </p>
           ) : (
             <div className="mt-3 space-y-2">
@@ -253,7 +250,7 @@ function Discovery() {
                     "flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition-colors",
                     hubId === hub.id
                       ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "border-border bg-card hover:border-primary/40",
+                      : "border-border bg-card/70 backdrop-blur hover:border-primary/40",
                   )}
                 >
                   <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -274,7 +271,7 @@ function Discovery() {
 
       {selectedModel && hubId && (
         <section className="mt-6">
-          <h2 className="text-sm font-semibold">Choose a plan</h2>
+          <h2 className="text-sm font-semibold">{t("choosePlan")}</h2>
           <div className="mt-3 space-y-3">
             {plans.map((plan) => (
               <PlanCard
@@ -291,7 +288,7 @@ function Discovery() {
       {planId && (
         <div className="sticky bottom-4 mt-6">
           <Button className="w-full" size="lg" onClick={continueToReserve}>
-            Continue to reserve
+            {t("continueReserve")}
           </Button>
         </div>
       )}
