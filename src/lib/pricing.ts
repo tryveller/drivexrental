@@ -19,7 +19,13 @@ export type PlanConfig = {
   rto_total_months: number | null;
 };
 
-export type QuoteLine = { label: string; amount: number };
+// Labels are copy keys (resolved through i18n at render time), never English
+// strings, so every amount line reads in the rider's language.
+export type QuoteLine = {
+  labelKey: string;
+  labelVars?: Record<string, string | number>;
+  amount: number;
+};
 
 export type Quote = {
   payNow: number;
@@ -35,21 +41,22 @@ export function buildQuote(plan: PlanConfig): Quote {
 
   if (plan.plan_type === "RTO") {
     if (plan.downpayment_amount > 0) {
-      lines.push({ label: "Downpayment", amount: plan.downpayment_amount });
+      lines.push({ labelKey: "lineDownpayment", amount: plan.downpayment_amount });
     }
     if (plan.processing_fee > 0) {
-      lines.push({ label: "Processing / registration fee", amount: plan.processing_fee });
+      lines.push({ labelKey: "lineProcessingFee", amount: plan.processing_fee });
     }
     if (plan.rental_amount > 0) {
-      lines.push({ label: "First monthly payment", amount: plan.rental_amount });
+      lines.push({ labelKey: "lineFirstMonthly", amount: plan.rental_amount });
     }
   } else {
     lines.push({
-      label: `First ${plan.billing_period} rent`,
+      labelKey: "lineFirstRent",
+      labelVars: { period: plan.billing_period },
       amount: plan.rental_amount,
     });
     if (plan.deposit_amount > 0) {
-      lines.push({ label: "Refundable security deposit", amount: plan.deposit_amount });
+      lines.push({ labelKey: "lineDeposit", amount: plan.deposit_amount });
     }
   }
 
@@ -64,14 +71,14 @@ export function buildQuote(plan: PlanConfig): Quote {
   };
 }
 
-export const OTHER_POSSIBLE_CHARGES = [
-  "Extra kilometre charges beyond your plan allowance",
-  "Late-payment charges if a rental payment is missed",
-  "Traffic challans issued against the vehicle",
-  "Damage charges identified at return inspection",
-  "Processing / registration charges where applicable",
-  "Other charges disclosed in your rental agreement",
-];
+export const OTHER_POSSIBLE_CHARGE_KEYS = [
+  "chargeExtraKm",
+  "chargeLateFee",
+  "chargeChallan",
+  "chargeDamage",
+  "chargeProcessing",
+  "chargeOther",
+] as const;
 
 export type KmUsage = {
   usedKm: number;
