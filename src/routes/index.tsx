@@ -103,7 +103,10 @@ function Discovery() {
 
   const selectedHub = hubStock.find((row) => row.hub.id === hubId) ?? null;
   const selectedModel = availability.find((row) => row.model.id === modelId) ?? null;
-  const plans = selectedModel?.plans ?? [];
+  const planOrder: Record<string, number> = { DAILY: 0, WEEKLY: 1, MONTHLY: 2, RTO: 3 };
+  const plans = [...(selectedModel?.plans ?? [])].sort(
+    (a, b) => (planOrder[a.plan_type] ?? 9) - (planOrder[b.plan_type] ?? 9),
+  );
 
   function continueToReserve() {
     if (!modelId || !hubId || !planId) return;
