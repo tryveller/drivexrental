@@ -97,17 +97,6 @@ export const PIN_COORDS: Record<string, { lat: number; lng: number }> = {
   "560076": { lat: 12.8916, lng: 77.5978 },
 };
 
-/** Single launch hub — DriveX opens with one big hub. */
-export const LAUNCH_HUB = {
-  name: "Koramangala DriveX Hub",
-  locality: "Koramangala",
-  address: "80 Feet Rd, 4th Block, Koramangala, Bengaluru 560034",
-  coords: { lat: 12.9352, lng: 77.6245 },
-};
-
-export const LAUNCH_HUB_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${LAUNCH_HUB.coords.lat},${LAUNCH_HUB.coords.lng}`;
-export const LAUNCH_HUB_EMBED_URL = `https://www.google.com/maps?q=${LAUNCH_HUB.coords.lat},${LAUNCH_HUB.coords.lng}&z=14&output=embed`;
-
 /** Best-effort coordinates for a rider's chosen area or PIN code. */
 export function approximateCoords(input: {
   locality?: string;
