@@ -217,7 +217,7 @@ function Discovery() {
               fromAmount={row.cheapest?.rental_amount ?? null}
               fromPeriod={row.cheapest?.billing_period ?? null}
               unitsReady={row.units}
-              badges={badges[row.model.name]}
+              badges={badges[row.model.name] ?? []}
               selected={modelId === row.model.id}
               onSelect={() => {
                 setModelId(row.model.id);
