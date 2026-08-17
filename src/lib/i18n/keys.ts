@@ -652,6 +652,468 @@ export const COPY = {
     "or": "ନାମ, ମଡେଲ ନାମ, ଦସ୍ତାବିଜ୍ ଏବଂ ପରିମାଣ ଇଂରାଜୀରେ ରହିବ।",
     ne: "नाम, मोडेलका नाम, कागजात र रकमहरू अङ्ग्रेजीमा नै रहनेछन्।",
   },
+  nearMe: {
+    en: "Near me",
+  },
+  hubNamed: {
+    en: "{locality} hub",
+  },
+  serviced: {
+    en: "Serviced {date}",
+  },
+  condNew: {
+    en: "New",
+  },
+  condRefurbished: {
+    en: "Refurbished",
+  },
+  condExcellent: {
+    en: "Excellent",
+  },
+  condVeryGood: {
+    en: "Very good",
+  },
+  condGood: {
+    en: "Good",
+  },
+  condFair: {
+    en: "Fair",
+  },
+  planDaily: {
+    en: "Daily rental",
+  },
+  planWeekly: {
+    en: "Weekly rental",
+  },
+  planMonthly: {
+    en: "Monthly rental",
+  },
+  planRto: {
+    en: "Rent to own",
+  },
+  newBike: {
+    en: "New bike",
+  },
+  refurbishedBike: {
+    en: "Refurbished bike",
+  },
+  lineDownpayment: {
+    en: "Downpayment",
+  },
+  lineProcessingFee: {
+    en: "Processing / registration fee",
+  },
+  lineFirstMonthly: {
+    en: "First monthly payment",
+  },
+  lineFirstRent: {
+    en: "First {period} rent",
+  },
+  lineDeposit: {
+    en: "Refundable security deposit",
+  },
+  kmIncluded: {
+    en: "Kilometres included",
+  },
+  kmIncludedValue: {
+    en: "{km} km, then {rate}/km",
+  },
+  ownershipAfter: {
+    en: "Ownership after",
+  },
+  ownershipValue: {
+    en: "{months} monthly payments",
+  },
+  reserveNote: {
+    en: "Pay {reserve} now to reserve. It is adjusted against {total} due at the hub, leaving {remaining} to pay there.",
+  },
+  locationUnsupported: {
+    en: "Your phone can't share location. Pick your area instead.",
+  },
+  locationDenied: {
+    en: "We couldn't get your location. Pick your area instead.",
+  },
+  chargeExtraKm: {
+    en: "Extra kilometre charges beyond your plan allowance",
+  },
+  chargeLateFee: {
+    en: "Late-payment charges if a rental payment is missed",
+  },
+  chargeChallan: {
+    en: "Traffic challans issued against the vehicle",
+  },
+  chargeDamage: {
+    en: "Damage charges identified at return inspection",
+  },
+  chargeProcessing: {
+    en: "Processing / registration charges where applicable",
+  },
+  chargeOther: {
+    en: "Other charges disclosed in your rental agreement",
+  },
+  subtitleBooking: {
+    en: "Your booking",
+  },
+  bikeWithYou: {
+    en: "Your bike is with you",
+  },
+  bikeWithYouBody: {
+    en: "Everything about this rental is now in My Bike.",
+  },
+  openMyBike: {
+    en: "Open My Bike",
+  },
+  bookingLabel: {
+    en: "Booking {code}",
+  },
+  heldUntil: {
+    en: "Your bike is held for you until {date}.",
+  },
+  reserveTitle: {
+    en: "Reserve this bike for {amount}",
+  },
+  reserveBody: {
+    en: "This amount is adjusted against {total} due at the hub, leaving {remaining} to pay when you collect the bike.",
+  },
+  payAndReserve: {
+    en: "Pay {amount} and reserve",
+  },
+  travelTitle: {
+    en: "How will you reach the hub?",
+  },
+  hubOpenLine: {
+    en: "{name}, {address}. Open {opens}–{closes}.",
+  },
+  bookRapido: {
+    en: "Book a Rapido ride",
+  },
+  travelSelf: {
+    en: "I'll travel on my own",
+  },
+  checkInTitle: {
+    en: "Check in at the hub",
+  },
+  rapidoCoupon: {
+    en: "Rapido coupon {code} — apply it in Rapido for your ride to the hub.",
+  },
+  reachedHub: {
+    en: "I've reached the hub",
+  },
+  collectTitle: {
+    en: "Collect your bike",
+  },
+  receivedBike: {
+    en: "I've received the bike",
+  },
+  rejectedTitle: {
+    en: "We can't go ahead with this rental",
+  },
+  rejectedBody: {
+    en: "Your documents could not be verified for this rental. Your ₹199 reservation will be refunded to the same payment method within 5–7 working days.",
+  },
+  backToBikes: {
+    en: "Back to bikes",
+  },
+  noBookingTitle: {
+    en: "You don't have a booking yet",
+  },
+  noBookingBody: {
+    en: "Pick a bike, a hub and a plan to get started.",
+  },
+  browseBikes: {
+    en: "Browse bikes",
+  },
+  genericError: {
+    en: "Something went wrong.",
+  },
+  couldNotStartBooking: {
+    en: "We could not start your booking.",
+  },
+  eligibleTitle: {
+    en: "You are likely eligible",
+  },
+  eligibleCloserLook: {
+    en: "We'll need to check this at the hub",
+  },
+  eligibilityTitle: {
+    en: "Optional: check your eligibility now",
+  },
+  dlNumberLabel: {
+    en: "Driving Licence number",
+  },
+  nameOnLicence: {
+    en: "Name on the licence",
+  },
+  dateOfBirth: {
+    en: "Date of birth",
+  },
+  selfieCaptured: {
+    en: "Selfie taken",
+  },
+  captureSelfie: {
+    en: "Take a selfie",
+  },
+  eligibilityConsent: {
+    en: "I allow DriveX to check my identity, documents and rental eligibility for this rental request.",
+  },
+  checkEligibility: {
+    en: "Check my eligibility",
+  },
+  skipContinue: {
+    en: "Skip and continue",
+  },
+  couldNotCheck: {
+    en: "We could not run the check.",
+  },
+  kycTitle: {
+    en: "Document verification at the hub",
+  },
+  addressProofLabel: {
+    en: "address proof",
+  },
+  addressProofPlaceholder: {
+    en: "Aadhaar / Passport / Utility bill",
+  },
+  submitDocuments: {
+    en: "Submit documents",
+  },
+  kycActionNeeded: {
+    en: "Some details need to be taken again.",
+  },
+  kycVerified: {
+    en: "Your documents are verified.",
+  },
+  kycSubmitFailed: {
+    en: "We could not submit your documents.",
+  },
+  payRemainingTitle: {
+    en: "Pay the remaining amount",
+  },
+  preparingSummary: {
+    en: "Getting your payment summary ready…",
+  },
+  reservationAlreadyPaid: {
+    en: "Reservation already paid",
+  },
+  amountDueNow: {
+    en: "Amount to pay now",
+  },
+  otherCharges: {
+    en: "Other charges that can apply",
+  },
+  payNowLabel: {
+    en: "Pay now",
+  },
+  simulateFailure: {
+    en: "Try a failed payment",
+  },
+  paymentFailed: {
+    en: "That payment did not go through. Your bike is still held — please try again.",
+  },
+  paymentReceived: {
+    en: "Payment received.",
+  },
+  paymentError: {
+    en: "The payment could not be processed.",
+  },
+  agreementTitle: {
+    en: "Accept your rental agreement",
+  },
+  agreementHeading: {
+    en: "DriveX rental agreement (summary)",
+  },
+  agreementP1: {
+    en: "You will use the vehicle lawfully, keep it in the condition recorded at handover, and return it to the agreed hub at the end of your rental period.",
+  },
+  agreementP2: {
+    en: "Rental payments are due on the scheduled date. Late payments attract the late fee shown in your plan. Traffic challans issued during your rental are paid by you.",
+  },
+  agreementP3: {
+    en: "Kilometres beyond your plan allowance are charged at the per-kilometre rate shown in your plan. Damage found at the return inspection is charged against your security deposit, and you get the handover and return photos.",
+  },
+  agreementP4: {
+    en: "Servicing must be done at a DriveX hub at the interval shown in the app. Riding an overdue vehicle can increase what you owe for damage.",
+  },
+  agreementAcceptCheck: {
+    en: "I have read and accept the rental agreement.",
+  },
+  acceptContinue: {
+    en: "Accept and continue",
+  },
+  myBikeSubtitle: {
+    en: "My Bike",
+  },
+  noActiveRental: {
+    en: "No active rental yet",
+  },
+  viewMyBooking: {
+    en: "See my booking",
+  },
+  yourBike: {
+    en: "Your bike",
+  },
+  odometerLine: {
+    en: "Odometer {km} km · fuel {fuel}%",
+  },
+  updatedOn: {
+    en: "updated {date}",
+  },
+  tabOverview: {
+    en: "Overview",
+  },
+  tabService: {
+    en: "Service",
+  },
+  tabPayments: {
+    en: "Payments",
+  },
+  tabReturn: {
+    en: "Return",
+  },
+  kmThisPeriod: {
+    en: "Kilometres this period",
+  },
+  kmUsedLine: {
+    en: "{used} of {included} km used",
+  },
+  kmOverLine: {
+    en: "{over} km over, {amount} extra so far",
+  },
+  kmLeftLine: {
+    en: "{remaining} km left",
+  },
+  allowanceResets: {
+    en: "Your km allowance resets on {date}",
+  },
+  bikeHealth: {
+    en: "Bike health",
+  },
+  serviceIntervalLine: {
+    en: "Servicing is needed every {days} days or {km} km, whichever comes first.",
+  },
+  serviceOverdueLine: {
+    en: "Service is overdue by {detail}. Please book a slot now.",
+  },
+  nextServiceLine: {
+    en: "Next service is due in {detail}.",
+  },
+  unitDays: {
+    en: "{value} days",
+  },
+  unitKm: {
+    en: "{value} km",
+  },
+  healthGood: {
+    en: "Good",
+  },
+  healthServiceDueSoon: {
+    en: "Service due soon",
+  },
+  healthServiceOverdue: {
+    en: "Service overdue",
+  },
+  healthAttention: {
+    en: "Needs attention",
+  },
+  challansTitle: {
+    en: "Traffic challans to pay",
+  },
+  serviceHistory: {
+    en: "Service history",
+  },
+  noServices: {
+    en: "No service booked yet.",
+  },
+  nextPayment: {
+    en: "Next payment",
+  },
+  nextPaymentOn: {
+    en: "{amount} to pay on {date}.",
+  },
+  nextPaymentNow: {
+    en: "{amount} to pay.",
+  },
+  lateFeeLine: {
+    en: "Late payment costs {amount} per day.",
+  },
+  payAmount: {
+    en: "Pay {amount}",
+  },
+  paymentHistory: {
+    en: "Payment history",
+  },
+  nothingYet: {
+    en: "Nothing here yet.",
+  },
+  returnTitle: {
+    en: "Return your bike",
+  },
+  pendingChallansLabel: {
+    en: "Challans to pay",
+  },
+  extraKmLabel: {
+    en: "Extra kilometre charges",
+  },
+  estimatedRefund: {
+    en: "Expected refund before inspection",
+  },
+  requestReturnSlot: {
+    en: "Ask for a return slot",
+  },
+  completeReturnInspection: {
+    en: "Finish return inspection",
+  },
+  returnRecorded: {
+    en: "Return recorded. Your refund is being processed.",
+  },
+  bookServiceTitle: {
+    en: "Book a service slot",
+  },
+  dateLabel: {
+    en: "Date",
+  },
+  slotLabel: {
+    en: "Time slot",
+  },
+  bookSlot: {
+    en: "Book slot",
+  },
+  serviceBooked: {
+    en: "Service slot booked.",
+  },
+  serviceBookFailed: {
+    en: "We could not book that slot.",
+  },
+  ledgerRESERVATION: {
+    en: "Reservation",
+  },
+  ledgerRENT: {
+    en: "Rent",
+  },
+  ledgerSECURITY_DEPOSIT: {
+    en: "Security deposit",
+  },
+  ledgerRTO_DOWNPAYMENT: {
+    en: "Downpayment",
+  },
+  ledgerPROCESSING_FEE: {
+    en: "Processing fee",
+  },
+  ledgerLATE_FEE: {
+    en: "Late fee",
+  },
+  ledgerKM_OVERAGE: {
+    en: "Extra kilometres",
+  },
+  ledgerCHALLAN: {
+    en: "Challan",
+  },
+  ledgerDAMAGE: {
+    en: "Damage",
+  },
+  ledgerREFUND: {
+    en: "Refund",
+  },
 } as const;
 
 export type TKey = keyof typeof COPY;
