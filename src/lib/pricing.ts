@@ -156,3 +156,33 @@ export function distanceKm(
     Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
   return Math.round(2 * R * Math.asin(Math.sqrt(h)) * 10) / 10;
 }
+
+// Condition score is a rider-facing 0-100 signal derived from real vehicle
+// telemetry: odometer, service recency and new/refurbished condition.
+export type ConditionScore = {
+  score: number;
+  label: "Excellent" | "Very good" | "Good" | "Fair";
+};
+
+export function computeConditionScore(vehicle: {
+  odometer_km: number;
+  last_service_date: string | null;
+  last_service_odometer: number;
+  condition: "NEW" | "REFURBISHED";
+}): ConditionScore {
+  const base = vehicle.condition === "NEW" ? 100 : 92;
+  const agePenalty = Math.min(22, vehicle.odometer_km / 1500);
+  const kmSinceService = Math.max(0, vehicle.odometer_km - vehicle.last_service_odometer);
+  const servicePenalty = Math.min(12, kmSinceService / 300);
+  const daysSinceService = vehicle.last_service_date
+    ? Math.floor((Date.now() - new Date(vehicle.last_service_date).getTime()) / 86_400_000)
+    : 30;
+  const freshnessPenalty = Math.min(10, Math.max(0, daysSinceService - 7) / 4);
+  const score = Math.max(
+    55,
+    Math.round(base - agePenalty - servicePenalty - freshnessPenalty),
+  );
+  const label =
+    score >= 92 ? "Excellent" : score >= 84 ? "Very good" : score >= 74 ? "Good" : "Fair";
+  return { score, label };
+}
