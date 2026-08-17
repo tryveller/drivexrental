@@ -476,12 +476,12 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { bookingId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { buildQuote } = await import("./pricing");
+    const { buildQuote, computeDuration } = await import("./pricing");
     const { supabase } = context;
 
     const { data: booking } = await supabase
       .from("bookings")
-      .select("id, plan_id")
+      .select("id, plan_id, pickup_on, pickup_slot, dropoff_on, dropoff_slot")
       .eq("id", data.bookingId)
       .single();
     if (!booking) throw new Error("Booking not found");
@@ -502,12 +502,21 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
       .filter((row) => row.entry_type === "RESERVATION")
       .reduce((sum, row) => sum + row.amount, 0);
 
-    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) });
+    const duration = computeDuration(
+      booking.pickup_on,
+      booking.pickup_slot,
+      booking.dropoff_on,
+      booking.dropoff_slot,
+    );
+    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration);
     return {
       lines: quote.atHub,
       reservationCredit,
       amountDue: quote.totalInitialLiability - reservationCredit,
       totalInitialLiability: quote.totalInitialLiability,
+      days: quote.days,
+      extraHours: quote.extraHours,
+      perDay: quote.perDay,
     };
   });
 
