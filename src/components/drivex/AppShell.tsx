@@ -4,6 +4,7 @@ import { Languages, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 import { DRIVEX_SUPPORT_PHONE } from "@/lib/format";
 import { AutoBackdrop } from "@/components/drivex/AutoBackdrop";
+import { AccountMenu } from "@/components/drivex/AccountMenu";
 import { DriveXLogo } from "@/components/drivex/DriveXLogo";
 import { LanguageChooser } from "@/components/drivex/LanguageChooser";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -75,6 +76,7 @@ export function AppShell({
               <LifeBuoy className="h-3.5 w-3.5" />
               {t("help")}
             </a>
+            <AccountMenu />
           </div>
         </div>
       </header>

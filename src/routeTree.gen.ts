@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as JourneyRouteImport } from './routes/journey'
 import { Route as MyBikeRouteImport } from './routes/my-bike'
@@ -17,6 +18,11 @@ import { Route as MyBikeRouteImport } from './routes/my-bike'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -37,12 +43,14 @@ const MyBikeRoute = MyBikeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/journey': typeof JourneyRoute
   '/my-bike': typeof MyBikeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/journey': typeof JourneyRoute
   '/my-bike': typeof MyBikeRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/journey': typeof JourneyRoute
   '/my-bike': typeof MyBikeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/journey' | '/my-bike'
+  fullPaths: '/' | '/account' | '/auth' | '/journey' | '/my-bike'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/journey' | '/my-bike'
-  id: '__root__' | '/' | '/auth' | '/journey' | '/my-bike'
+  to: '/' | '/account' | '/auth' | '/journey' | '/my-bike'
+  id: '__root__' | '/' | '/account' | '/auth' | '/journey' | '/my-bike'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AuthRoute: typeof AuthRoute
   JourneyRoute: typeof JourneyRoute
   MyBikeRoute: typeof MyBikeRoute
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AuthRoute: AuthRoute,
   JourneyRoute: JourneyRoute,
   MyBikeRoute: MyBikeRoute,
