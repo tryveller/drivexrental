@@ -21,7 +21,7 @@ import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore, computeDuration, distanceKm, planDayRate } from "@/lib/pricing";
 import { bestInClass } from "@/lib/bike-specs";
 import { useLanguage } from "@/lib/i18n";
-import { useRiderLocation } from "@/lib/location";
+import { LOCALITY_COORDS, PIN_COORDS, useRiderLocation } from "@/lib/location";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -55,7 +55,12 @@ function Discovery() {
   const [showRto, setShowRto] = useState(false);
   const [dates, setDates] = useState<RideDates>(() => defaultDates());
 
-  const coords = location?.coords ?? null;
+  // Fall back to the locality/PIN centre so distance still shows when the rider
+  // picked their area manually instead of sharing GPS.
+  const coords =
+    location?.coords ??
+    (location?.pinCode ? PIN_COORDS[location.pinCode] ?? null : null) ??
+    (location?.locality ? LOCALITY_COORDS[location.locality] ?? null : null);
   const locality = location?.locality ?? "";
   const locationLabel = locality || location?.pinCode || t("nearMe");
 
