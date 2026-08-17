@@ -12,6 +12,24 @@
 // to fill the other languages, and `bun run i18n:check` before shipping.
 
 export const COPY = {
+  perDayLabel: {
+    en: "Per day",
+  },
+  totalForPeriod: {
+    en: "Total for 1 {period}",
+  },
+  reserveHoldNote: {
+    en: "Pay {reserve} now — we hold this bike for you for 3 days.",
+  },
+  changePlanAction: {
+    en: "Change plan",
+  },
+  selectedPlanLabel: {
+    en: "{plan} plan",
+  },
+  continueToDates: {
+    en: "Continue",
+  },
   help: {
     en: "Help",
     hi: "मदद",
