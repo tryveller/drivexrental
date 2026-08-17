@@ -350,10 +350,6 @@ export const payReservation = createServerFn({ method: "POST" })
     return { ok: true, alreadyPaid: false };
   });
 
-export const setTravelMode = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { bookingId: string; mode: "RAPIDO" | "SELF" }) => input)
-  .handler(async ({ data, context }) => {
 export const changePickupDate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { bookingId: string; pickupOn: string; pickupSlot?: string }) => input)
@@ -401,6 +397,10 @@ export const changePickupDate = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export const setTravelMode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookingId: string; mode: "RAPIDO" | "SELF" }) => input)
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
     const coupon = data.mode === "RAPIDO" ? "DRIVEX50" : null;
