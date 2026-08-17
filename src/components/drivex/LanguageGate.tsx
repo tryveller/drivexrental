@@ -1,7 +1,8 @@
-import { Bike, Languages } from "lucide-react";
+import { Languages } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { AutoBackdrop } from "@/components/drivex/AutoBackdrop";
+import { DriveXLogo } from "@/components/drivex/DriveXLogo";
 import { LANGUAGES, useLanguage } from "@/lib/i18n";
 
 export function LanguageGate({ children }: { children: ReactNode }) {
@@ -13,10 +14,10 @@ export function LanguageGate({ children }: { children: ReactNode }) {
     <div className="relative min-h-screen">
       <AutoBackdrop />
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-10">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-          <Bike className="h-6 w-6" />
-        </span>
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight">DriveX</h1>
+        <DriveXLogo size={64} priority />
+        <h1 className="mt-5 text-3xl font-semibold tracking-tight">
+          DriveX <span className="text-primary">Rental</span>
+        </h1>
         <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
           <Languages className="h-4 w-4" /> Choose your language · भाषा चुनें · ಭಾಷೆ ಆಯ್ಕೆ
         </p>

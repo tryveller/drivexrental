@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Bike, LifeBuoy } from "lucide-react";
+import { LifeBuoy } from "lucide-react";
 import { DRIVEX_SUPPORT_PHONE } from "@/lib/format";
 import { AutoBackdrop } from "@/components/drivex/AutoBackdrop";
+import { DriveXLogo } from "@/components/drivex/DriveXLogo";
 import { LANGUAGES, useLanguage, type Lang } from "@/lib/i18n";
 
 function LanguagePicker() {
@@ -40,11 +41,11 @@ export function AppShell({
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_0_24px_-6px_var(--primary)]">
-              <Bike className="h-5 w-5" />
-            </span>
+            <DriveXLogo size={36} priority className="shrink-0" />
             <span className="leading-tight">
-              <span className="block text-base font-semibold tracking-tight">DriveX</span>
+              <span className="block text-base font-semibold tracking-tight">
+                DriveX <span className="text-primary">Rental</span>
+              </span>
               <span className="block text-[11px] text-muted-foreground">
                 {subtitle ?? t("tagline")}
               </span>

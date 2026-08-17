@@ -115,6 +115,26 @@ const DICT = {
     hi: "प्लान चुनें",
     kn: "ಪ್ಲಾನ್ ಆಯ್ಕೆ ಮಾಡಿ",
   },
+  rtoTitle: {
+    en: "Thinking long term?",
+    hi: "लंबी अवधि के लिए सोच रहे हैं?",
+    kn: "ದೀರ್ಘಾವಧಿಗೆ ಯೋಚಿಸುತ್ತಿದ್ದೀರಾ?",
+  },
+  rtoHint: {
+    en: "Rent to own: keep paying monthly and the bike becomes yours.",
+    hi: "रेंट टू ओन: हर महीने भुगतान करते रहें और बाइक आपकी हो जाएगी।",
+    kn: "ರೆಂಟ್ ಟು ಓನ್: ಮಾಸಿಕ ಪಾವತಿ ಮುಂದುವರಿಸಿ, ಬೈಕ್ ನಿಮ್ಮದಾಗುತ್ತದೆ.",
+  },
+  rtoExplore: {
+    en: "Explore rent to own",
+    hi: "रेंट टू ओन देखें",
+    kn: "ರೆಂಟ್ ಟು ಓನ್ ನೋಡಿ",
+  },
+  rtoBack: {
+    en: "Back to rental plans",
+    hi: "रेंटल प्लान पर वापस",
+    kn: "ರೆಂಟಲ್ ಪ್ಲಾನ್‌ಗೆ ಹಿಂತಿರುಗಿ",
+  },
   continueReserve: {
     en: "Continue to reserve",
     hi: "रिज़र्व करने के लिए आगे बढ़ें",

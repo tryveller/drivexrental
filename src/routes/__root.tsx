@@ -16,6 +16,7 @@ import { LanguageProvider } from "@/lib/i18n";
 import { LanguageGate } from "@/components/drivex/LanguageGate";
 import { LocationProvider } from "@/lib/location";
 import { LocationGate } from "@/components/drivex/LocationGate";
+import { SplashScreen } from "@/components/drivex/SplashScreen";
 
 function NotFoundComponent() {
   return (
@@ -102,7 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,
@@ -132,12 +133,14 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <LocationProvider>
-          <LanguageGate>
-            <LocationGate>
-              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-              <Outlet />
-            </LocationGate>
-          </LanguageGate>
+          <SplashScreen>
+            <LanguageGate>
+              <LocationGate>
+                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                <Outlet />
+              </LocationGate>
+            </LanguageGate>
+          </SplashScreen>
         </LocationProvider>
         <Toaster />
       </LanguageProvider>
