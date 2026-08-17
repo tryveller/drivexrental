@@ -55,7 +55,8 @@ export function LocationGate({ children }: { children: ReactNode }) {
       ...(pinCode.length === 6 ? { pinCode } : {}),
       ...(coords ? { coords } : {}),
     });
-    return from ? distanceKm(from, LAUNCH_HUB.coords) : null;
+    if (!from) return null;
+    return Math.max(1, Math.round(distanceKm(from, LAUNCH_HUB.coords)));
   }, [coords, locality, pinCode]);
 
   return (
