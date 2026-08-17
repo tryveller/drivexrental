@@ -6,6 +6,7 @@ import { Loader2, MapPin, Navigation, Clock, Sparkles, ChevronRight } from "luci
 import { AppShell } from "@/components/drivex/AppShell";
 import { PlanCard } from "@/components/drivex/PlanCard";
 import { BikeCard } from "@/components/drivex/BikeCard";
+import { BikeDeck } from "@/components/drivex/BikeDeck";
 import { DatesStep, defaultDates, type RideDates } from "@/components/drivex/DatesStep";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,6 @@ import { computeConditionScore, computeDuration, distanceKm, planDayRate } from 
 import { bestInClass } from "@/lib/bike-specs";
 import { useLanguage } from "@/lib/i18n";
 import { useRiderLocation } from "@/lib/location";
-import bannerImage from "@/assets/drivex-banner.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,30 +59,32 @@ function Discovery() {
   const locality = location?.locality ?? "";
   const locationLabel = locality || location?.pinCode || t("nearMe");
 
-  // V1 launches from a single hub: the one nearest the rider.
-  const hub = useMemo(() => {
+  // Every hub carries its own distance from the rider's PIN/location, so each
+  // bike can show how far its parking hub is.
+  const hubs = useMemo(() => {
     const list = catalog.data?.hubs ?? [];
-    const withDistance = list.map((item) => ({
+    return list.map((item) => ({
       ...item,
       distance: coords ? distanceKm(coords, { lat: item.latitude, lng: item.longitude }) : null,
     }));
+  }, [catalog.data, coords]);
+
+  const hub = useMemo(() => {
+    if (hubs.length === 0) return null;
     if (coords) {
-      return withDistance.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))[0] ?? null;
+      return [...hubs].sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))[0] ?? null;
     }
-    const matched = withDistance.find((item) => item.locality === locality);
-    return matched ?? withDistance[0] ?? null;
-  }, [catalog.data, coords, locality]);
+    return hubs.find((item) => item.locality === locality) ?? hubs[0] ?? null;
+  }, [hubs, coords, locality]);
 
   // One best-condition vehicle per model, so each bike is shown once with
   // the real service history a rider would ride away with.
   const bikes = useMemo(() => {
-    if (!hub) return [];
     const models = catalog.data?.models ?? [];
     const plans = catalog.data?.plans ?? [];
     const best = new Map<string, CatalogVehicle>();
     const counts = new Map<string, number>();
     for (const vehicle of catalog.data?.vehicles ?? []) {
-      if (vehicle.hub_id !== hub.id) continue;
       counts.set(vehicle.model_id, (counts.get(vehicle.model_id) ?? 0) + 1);
       const current = best.get(vehicle.model_id);
       if (
@@ -95,6 +97,7 @@ function Discovery() {
     return [...best.entries()].flatMap(([id, vehicle]) => {
       const model = models.find((item) => item.id === id);
       if (!model) return [];
+      const bikeHub = hubs.find((item) => item.id === vehicle.hub_id) ?? null;
       const modelPlans = plans.filter(
         (plan) => plan.model_id === model.id || plan.model_id === null,
       );
@@ -102,9 +105,11 @@ function Discovery() {
         (min, plan) => (min === null || plan.rental_amount < min.rental_amount ? plan : min),
         null,
       );
-      return [{ model, vehicle, plans: modelPlans, cheapest, units: counts.get(id) ?? 0 }];
+      return [
+        { model, vehicle, hub: bikeHub, plans: modelPlans, cheapest, units: counts.get(id) ?? 0 },
+      ];
     });
-  }, [hub, catalog.data]);
+  }, [hubs, catalog.data]);
 
   const badges = useMemo(
     () => bestInClass(bikes.map((row) => row.model)),
@@ -129,10 +134,11 @@ function Discovery() {
   const canContinue = Boolean(planId) && (!needsDates || duration !== null);
 
   function continueToReserve() {
-    if (!modelId || !hub || !planId) return;
+    const bikeHub = selected?.hub ?? hub;
+    if (!modelId || !bikeHub || !planId) return;
     sessionStorage.setItem(
       "drivex.selection",
-      JSON.stringify({ modelId, hubId: hub.id, planId, ...(needsDates ? dates : {}) }),
+      JSON.stringify({ modelId, hubId: bikeHub.id, planId, ...(needsDates ? dates : {}) }),
     );
     navigate({ to: "/auth" });
   }
