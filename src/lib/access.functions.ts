@@ -1,4 +1,4 @@
-import { createServerFn, getRequestHeader } from "@tanstack/react-start";
+import { createServerFn } from "@tanstack/react-start";
 
 export const getGateStatus = createServerFn({ method: "GET" }).handler(async () => {
   const { gateEnabled } = await import("./access.server");
@@ -18,7 +18,7 @@ export const unlockPrototype = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const access = await import("./access.server");
     if (!access.gateEnabled()) return { token: null, enabled: false };
-
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
     const clientKey =
       getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "unknown";
 
