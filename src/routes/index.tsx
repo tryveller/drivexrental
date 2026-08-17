@@ -106,8 +106,6 @@ function Discovery() {
     .sort((a, b) => (planOrder[a.plan_type] ?? 9) - (planOrder[b.plan_type] ?? 9));
   const rtoPlans = (selected?.plans ?? []).filter((plan) => plan.plan_type === "RTO");
   const plans = showRto ? rtoPlans : rentalPlans;
-    (a, b) => (planOrder[a.plan_type] ?? 9) - (planOrder[b.plan_type] ?? 9),
-  );
 
   function continueToReserve() {
     if (!modelId || !hub || !planId) return;
