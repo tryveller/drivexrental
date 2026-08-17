@@ -6,6 +6,7 @@ import { Loader2, MapPin, Navigation, Clock, Sparkles, ChevronRight } from "luci
 import { AppShell } from "@/components/drivex/AppShell";
 import { PlanCard } from "@/components/drivex/PlanCard";
 import { BikeCard } from "@/components/drivex/BikeCard";
+import { BikeDeck } from "@/components/drivex/BikeDeck";
 import { DatesStep, defaultDates, type RideDates } from "@/components/drivex/DatesStep";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +21,7 @@ import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore, computeDuration, distanceKm, planDayRate } from "@/lib/pricing";
 import { bestInClass } from "@/lib/bike-specs";
 import { useLanguage } from "@/lib/i18n";
-import { useRiderLocation } from "@/lib/location";
-import bannerImage from "@/assets/drivex-banner.jpg";
+import { LOCALITY_COORDS, PIN_COORDS, useRiderLocation } from "@/lib/location";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -55,34 +55,42 @@ function Discovery() {
   const [showRto, setShowRto] = useState(false);
   const [dates, setDates] = useState<RideDates>(() => defaultDates());
 
-  const coords = location?.coords ?? null;
+  // Fall back to the locality/PIN centre so distance still shows when the rider
+  // picked their area manually instead of sharing GPS.
+  const coords =
+    location?.coords ??
+    (location?.pinCode ? PIN_COORDS[location.pinCode] : undefined) ??
+    (location?.locality ? LOCALITY_COORDS[location.locality] : undefined) ??
+    null;
   const locality = location?.locality ?? "";
   const locationLabel = locality || location?.pinCode || t("nearMe");
 
-  // V1 launches from a single hub: the one nearest the rider.
-  const hub = useMemo(() => {
+  // Every hub carries its own distance from the rider's PIN/location, so each
+  // bike can show how far its parking hub is.
+  const hubs = useMemo(() => {
     const list = catalog.data?.hubs ?? [];
-    const withDistance = list.map((item) => ({
+    return list.map((item) => ({
       ...item,
       distance: coords ? distanceKm(coords, { lat: item.latitude, lng: item.longitude }) : null,
     }));
+  }, [catalog.data, coords]);
+
+  const hub = useMemo(() => {
+    if (hubs.length === 0) return null;
     if (coords) {
-      return withDistance.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))[0] ?? null;
+      return [...hubs].sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))[0] ?? null;
     }
-    const matched = withDistance.find((item) => item.locality === locality);
-    return matched ?? withDistance[0] ?? null;
-  }, [catalog.data, coords, locality]);
+    return hubs.find((item) => item.locality === locality) ?? hubs[0] ?? null;
+  }, [hubs, coords, locality]);
 
   // One best-condition vehicle per model, so each bike is shown once with
   // the real service history a rider would ride away with.
   const bikes = useMemo(() => {
-    if (!hub) return [];
     const models = catalog.data?.models ?? [];
     const plans = catalog.data?.plans ?? [];
     const best = new Map<string, CatalogVehicle>();
     const counts = new Map<string, number>();
     for (const vehicle of catalog.data?.vehicles ?? []) {
-      if (vehicle.hub_id !== hub.id) continue;
       counts.set(vehicle.model_id, (counts.get(vehicle.model_id) ?? 0) + 1);
       const current = best.get(vehicle.model_id);
       if (
@@ -95,6 +103,7 @@ function Discovery() {
     return [...best.entries()].flatMap(([id, vehicle]) => {
       const model = models.find((item) => item.id === id);
       if (!model) return [];
+      const bikeHub = hubs.find((item) => item.id === vehicle.hub_id) ?? null;
       const modelPlans = plans.filter(
         (plan) => plan.model_id === model.id || plan.model_id === null,
       );
@@ -102,9 +111,11 @@ function Discovery() {
         (min, plan) => (min === null || plan.rental_amount < min.rental_amount ? plan : min),
         null,
       );
-      return [{ model, vehicle, plans: modelPlans, cheapest, units: counts.get(id) ?? 0 }];
+      return [
+        { model, vehicle, hub: bikeHub, plans: modelPlans, cheapest, units: counts.get(id) ?? 0 },
+      ];
     });
-  }, [hub, catalog.data]);
+  }, [hubs, catalog.data]);
 
   const badges = useMemo(
     () => bestInClass(bikes.map((row) => row.model)),
@@ -129,10 +140,11 @@ function Discovery() {
   const canContinue = Boolean(planId) && (!needsDates || duration !== null);
 
   function continueToReserve() {
-    if (!modelId || !hub || !planId) return;
+    const bikeHub = selected?.hub ?? hub;
+    if (!modelId || !bikeHub || !planId) return;
     sessionStorage.setItem(
       "drivex.selection",
-      JSON.stringify({ modelId, hubId: hub.id, planId, ...(needsDates ? dates : {}) }),
+      JSON.stringify({ modelId, hubId: bikeHub.id, planId, ...(needsDates ? dates : {}) }),
     );
     navigate({ to: "/auth" });
   }
@@ -153,28 +165,55 @@ function Discovery() {
 
   return (
     <AppShell>
-      <section className="relative overflow-hidden rounded-3xl border border-primary/25">
-        <img
-          src={bannerImage}
-          alt="Orange and black scooter lit by warm rim light"
-          width={1536}
-          height={768}
-          className="h-56 w-full object-cover sm:h-72"
+      <section className="flex items-center justify-between gap-3">
+        <h1 className="text-lg font-semibold tracking-tight">{t("compareHint")}</h1>
+        <button
+          type="button"
+          onClick={clearLocation}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/40 bg-card/70 px-3 py-1.5 text-xs font-medium backdrop-blur"
+        >
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          {locationLabel}
+        </button>
+      </section>
+
+      <section className="mt-4">
+        <BikeDeck
+          items={bikes.map((row) => ({ key: row.model.id }))}
+          renderItem={(position) => {
+            const row = bikes[position];
+            if (!row) return null;
+            return (
+              <BikeCard
+                model={row.model}
+                vehicle={row.vehicle}
+                fromAmount={row.cheapest?.rental_amount ?? null}
+                fromPeriod={row.cheapest?.billing_period ?? null}
+                unitsReady={row.units}
+                distance={row.hub?.distance ?? null}
+                hubLocality={row.hub?.locality ?? null}
+                badges={badges[row.model.name] ?? []}
+                selected={modelId === row.model.id}
+                onSelect={() => {
+                  setModelId(row.model.id);
+                  setPlanId(null);
+                  setShowRto(false);
+                  setPlanSheetOpen(true);
+                }}
+              />
+            );
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/10" />
-        <div className="absolute inset-x-0 bottom-0 p-5">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {t("bannerHeadline")}
-          </h1>
-          <button
-            type="button"
-            onClick={clearLocation}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-background/60 px-3 py-1.5 text-xs font-medium backdrop-blur"
-          >
-            <MapPin className="h-3.5 w-3.5 text-primary" />
-            {locationLabel}
-          </button>
-        </div>
+        {bikes[0] ? (
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">
+            {bikes[0].hub?.distance !== null && bikes[0].hub
+              ? t("kmFromYou", {
+                  km: bikes[0].hub.distance ?? 0,
+                  place: location?.pinCode || locationLabel,
+                })
+              : t("allChecked")}
+          </p>
+        ) : null}
       </section>
 
       {hub && (
@@ -203,32 +242,6 @@ function Discovery() {
         </a>
       )}
 
-      <section className="mt-5">
-        <div className="mb-2 flex items-baseline justify-between gap-2">
-          <h2 className="text-sm font-semibold">{t("compareHint")}</h2>
-          <span className="text-[11px] text-muted-foreground">{t("allChecked")}</span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {bikes.map((row) => (
-            <BikeCard
-              key={row.model.id}
-              model={row.model}
-              vehicle={row.vehicle}
-              fromAmount={row.cheapest?.rental_amount ?? null}
-              fromPeriod={row.cheapest?.billing_period ?? null}
-              unitsReady={row.units}
-              badges={badges[row.model.name] ?? []}
-              selected={modelId === row.model.id}
-              onSelect={() => {
-                setModelId(row.model.id);
-                setPlanId(null);
-                setShowRto(false);
-                setPlanSheetOpen(true);
-              }}
-            />
-          ))}
-        </div>
-      </section>
 
       <Dialog open={planSheetOpen && Boolean(selected)} onOpenChange={setPlanSheetOpen}>
         <DialogContent className="max-h-[92vh] max-w-lg gap-0 overflow-y-auto p-0">
