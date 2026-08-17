@@ -21,7 +21,7 @@ export function LocationGate({ children }: { children: ReactNode }) {
 
   function detect() {
     if (!("geolocation" in navigator)) {
-      toast.error("Your browser can't share location. Pick your area instead.");
+      toast.error(t("locationUnsupported"));
       return;
     }
     setLocating(true);
@@ -35,7 +35,7 @@ export function LocationGate({ children }: { children: ReactNode }) {
       },
       () => {
         setLocating(false);
-        toast.error("We couldn't get your location. Pick your area instead.");
+        toast.error(t("locationDenied"));
       },
       { timeout: 8000 },
     );
