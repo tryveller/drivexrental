@@ -5,13 +5,15 @@ import { DriveXLogo } from "@/components/drivex/DriveXLogo";
 const SESSION_KEY = "drivex.splash.seen";
 
 export function SplashScreen({ children }: { children: ReactNode }) {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    if (window.sessionStorage.getItem(SESSION_KEY)) return;
+    if (window.sessionStorage.getItem(SESSION_KEY)) {
+      setVisible(false);
+      return;
+    }
     window.sessionStorage.setItem(SESSION_KEY, "1");
-    setVisible(true);
     const fade = window.setTimeout(() => setFading(true), 1500);
     const hide = window.setTimeout(() => setVisible(false), 2100);
     return () => {
