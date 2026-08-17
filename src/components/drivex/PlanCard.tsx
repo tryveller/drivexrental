@@ -3,7 +3,7 @@ import type { CatalogPlan } from "@/lib/catalog.functions";
 import { buildQuote, planDayRate } from "@/lib/pricing";
 import { rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useLanguage, type TKey } from "@/lib/i18n";
+import { useLanguage } from "@/lib/i18n";
 
 export function PlanCard({
   plan,
