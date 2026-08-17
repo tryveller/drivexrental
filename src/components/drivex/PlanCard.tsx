@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import type { CatalogPlan } from "@/lib/catalog.functions";
-import { buildQuote } from "@/lib/pricing";
+import { buildQuote, planDayRate } from "@/lib/pricing";
 import { rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage, type TKey } from "@/lib/i18n";
@@ -16,6 +16,7 @@ export function PlanCard({
 }) {
   const quote = buildQuote(plan);
   const { t } = useLanguage();
+  const dayRate = planDayRate(plan);
   const title = t(
     plan.plan_type === "DAILY"
       ? "planDaily"
@@ -41,7 +42,6 @@ export function PlanCard({
         <div>
           <p className="font-semibold">{title}</p>
           <p className="text-sm text-muted-foreground">
-            {rupees(plan.rental_amount)} / {plan.billing_period} ·{" "}
             {plan.vehicle_condition === "NEW" ? t("newBike") : t("refurbishedBike")}
           </p>
         </div>
@@ -52,15 +52,24 @@ export function PlanCard({
         )}
       </div>
 
+      <div className="mt-3 flex items-baseline gap-1.5">
+        <span className="text-2xl font-semibold">{rupees(dayRate)}</span>
+        <span className="text-xs text-muted-foreground">{t("perDayLabel")}</span>
+      </div>
+
       <dl className="mt-3 space-y-1.5 text-sm">
-        {quote.atHub.map((line) => (
-          <div key={line.labelKey} className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">
-              {t(line.labelKey as TKey, line.labelVars)}
-            </dt>
-            <dd className="font-medium">{rupees(line.amount)}</dd>
+        {plan.deposit_amount > 0 && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted-foreground">{t("lineDeposit")}</dt>
+            <dd className="font-medium">{rupees(plan.deposit_amount)}</dd>
           </div>
-        ))}
+        )}
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-foreground">
+            {t("totalForPeriod", { period: plan.billing_period })}
+          </dt>
+          <dd className="font-medium">{rupees(quote.totalInitialLiability)}</dd>
+        </div>
         <div className="flex justify-between gap-4 border-t border-border pt-1.5">
           <dt className="text-muted-foreground">{t("kmIncluded")}</dt>
           <dd className="font-medium">
@@ -81,11 +90,7 @@ export function PlanCard({
       </dl>
 
       <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
-        {t("reserveNote", {
-          reserve: rupees(plan.reservation_amount),
-          total: rupees(quote.totalInitialLiability),
-          remaining: rupees(quote.amountAtHub),
-        })}
+        {t("reserveHoldNote", { reserve: rupees(plan.reservation_amount) })}
       </p>
     </button>
   );
