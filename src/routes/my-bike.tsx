@@ -111,6 +111,15 @@ function MyBikePage() {
       : health.status === "Service Due Soon"
         ? "bg-secondary text-secondary-foreground"
         : "bg-destructive/10 text-destructive";
+  const healthDetail = t(health.detailUnit === "days" ? "unitDays" : "unitKm", {
+    value: health.detailValue,
+  });
+  const unusedHealthTone =
+    health.status === "Good"
+      ? "bg-accent text-accent-foreground"
+      : health.status === "Service Due Soon"
+        ? "bg-secondary text-secondary-foreground"
+        : "bg-destructive/10 text-destructive";
 
   return (
     <AppShell subtitle={t("myBikeSubtitle")}>
