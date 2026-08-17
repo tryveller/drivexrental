@@ -1,4 +1,4 @@
-import { Fuel, Gauge, Package, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
+import { Fuel, Gauge, MapPin, Navigation, Package, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
 import type { CatalogModel, CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore } from "@/lib/pricing";
 import { bikeSpec } from "@/lib/bike-specs";
@@ -28,6 +28,8 @@ export function BikeCard({
   fromAmount,
   fromPeriod,
   unitsReady,
+  distance,
+  hubLocality,
   badges,
   selected,
   onSelect,
@@ -37,6 +39,9 @@ export function BikeCard({
   fromAmount: number | null;
   fromPeriod: string | null;
   unitsReady?: number;
+  distance?: number | null;
+  hubLocality?: string | null;
+  placeLabel?: string;
   badges?: string[];
   selected: boolean;
   onSelect: () => void;
@@ -99,6 +104,12 @@ export function BikeCard({
           {condition.score}/100
           <span className="font-medium opacity-90">· {t(condition.labelKey)}</span>
         </span>
+        {distance !== null && distance !== undefined && (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-[11px] font-semibold backdrop-blur">
+            <Navigation className="h-3 w-3 text-primary" />
+            {distance} km
+          </span>
+        )}
         <div className="absolute inset-x-3 bottom-2 flex items-end justify-between gap-2">
           <span className="text-sm font-semibold">{modelTitle(model.brand, model.name)}</span>
           {fromAmount !== null && (
@@ -111,6 +122,13 @@ export function BikeCard({
           )}
         </div>
       </div>
+
+      {hubLocality ? (
+        <div className="flex items-center gap-1.5 px-3 pt-2 text-[11px] text-muted-foreground">
+          <MapPin className="h-3 w-3 text-primary" />
+          <span className="truncate">{t("parkedAt", { hub: hubLocality })}</span>
+        </div>
+      ) : null}
 
       <div className="flex items-center gap-3 px-3 pb-3 pt-2 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1">
