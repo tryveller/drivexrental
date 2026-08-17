@@ -50,9 +50,9 @@ function AuthPage() {
     try {
       const result = await requestOtp({ data: { phone } });
       setDemoCode(result.demoCode);
-      toast.success("We've sent you a verification code.");
+      toast.success(t("otpSent"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not send the code.");
+      toast.error(error instanceof Error ? error.message : t("otpSendFailed"));
     } finally {
       setSending(false);
     }
@@ -69,14 +69,14 @@ function AuthPage() {
       if (error) throw new Error(error.message);
       navigate({ to: "/journey" });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not verify the code.");
+      toast.error(error instanceof Error ? error.message : t("otpVerifyFailed"));
     } finally {
       setVerifying(false);
     }
   }
 
   return (
-    <AppShell subtitle="Mobile verification">
+    <AppShell subtitle={t("subtitleMobileVerification")}>
       <div className="mx-auto max-w-md">
         <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
           <ShieldCheck className="h-5 w-5 text-primary" />

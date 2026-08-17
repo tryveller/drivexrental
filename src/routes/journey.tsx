@@ -35,9 +35,9 @@ import {
   submitEligibility,
   submitHubKyc,
 } from "@/lib/booking.functions";
-import { OTHER_POSSIBLE_CHARGES, buildQuote } from "@/lib/pricing";
+import { OTHER_POSSIBLE_CHARGE_KEYS, buildQuote } from "@/lib/pricing";
 import { longDate, modelTitle, rupees } from "@/lib/format";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type TKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/journey")({
   head: () => ({
@@ -131,15 +131,15 @@ function JourneyPage() {
     createBooking({ data: selection })
       .then(() => queryClient.invalidateQueries({ queryKey: ["journey"] }))
       .catch((error: unknown) =>
-        toast.error(error instanceof Error ? error.message : "Could not start your booking."),
+        toast.error(error instanceof Error ? error.message : t("couldNotStartBooking")),
       );
-  }, [bootstrapped, session.userId, journey.data, queryClient]);
+  }, [bootstrapped, session.userId, journey.data, queryClient, t]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["journey"] });
 
   if (session.loading || journey.isLoading || catalog.isLoading) {
     return (
-      <AppShell subtitle="Your booking">
+      <AppShell subtitle={t("subtitleBooking")}>
         <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loadingBooking")}
         </div>
@@ -156,7 +156,7 @@ function JourneyPage() {
 
   if (!booking || !plan || !model || !hub) {
     return (
-      <AppShell subtitle="Your booking">
+      <AppShell subtitle={t("subtitleBooking")}>
         <EmptyState onBrowse={() => navigate({ to: "/" })} />
       </AppShell>
     );
@@ -164,15 +164,13 @@ function JourneyPage() {
 
   if (booking.status === "ACTIVE" || booking.status === "RETURN_REQUESTED") {
     return (
-      <AppShell subtitle="Your booking">
+      <AppShell subtitle={t("subtitleBooking")}>
         <div className="rounded-2xl border border-border bg-card p-5 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-primary" />
-          <h1 className="mt-3 text-xl font-semibold">Your bike is with you</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Everything for this rental now lives in My Bike.
-          </p>
+          <h1 className="mt-3 text-xl font-semibold">{t("bikeWithYou")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("bikeWithYouBody")}</p>
           <Button className="mt-4" onClick={() => navigate({ to: "/my-bike" })}>
-            Open My Bike
+            {t("openMyBike")}
           </Button>
         </div>
       </AppShell>
@@ -182,23 +180,28 @@ function JourneyPage() {
   const quote = buildQuote(plan);
 
   return (
-    <AppShell subtitle="Your booking">
+    <AppShell subtitle={t("subtitleBooking")}>
       <header className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs text-muted-foreground">Booking {booking.booking_code}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("bookingLabel", { code: booking.booking_code })}
+            </p>
             <h1 className="mt-1 text-lg font-semibold">
               {modelTitle(model.brand, model.name)}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {hub.name} · {plan.plan_type === "RTO" ? "Rent to own" : `${rupees(plan.rental_amount)} / ${plan.billing_period}`}
+              {hub.name} ·{" "}
+              {plan.plan_type === "RTO"
+                ? t("planRto")
+                : `${rupees(plan.rental_amount)} / ${plan.billing_period}`}
             </p>
           </div>
           <Badge variant="secondary">{booking.status.replaceAll("_", " ").toLowerCase()}</Badge>
         </div>
         {booking.reservation_expires_at && step !== "DONE" && (
           <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
-            Your bike is held until {longDate(booking.reservation_expires_at)}.
+            {t("heldUntil", { date: longDate(booking.reservation_expires_at) })}
           </p>
         )}
       </header>
@@ -211,17 +214,19 @@ function JourneyPage() {
         {step === "RESERVE" && (
           <StepCard
             icon={<Wallet className="h-5 w-5 text-primary" />}
-            title={`Reserve this bike for ${rupees(plan.reservation_amount)}`}
+            title={t("reserveTitle", { amount: rupees(plan.reservation_amount) })}
             body={
               <>
                 <p className="text-sm text-muted-foreground">
-                  This amount is adjusted against {rupees(quote.totalInitialLiability)} due at the
-                  hub, leaving {rupees(quote.amountAtHub)} to pay when you collect the bike.
+                  {t("reserveBody", {
+                    total: rupees(quote.totalInitialLiability),
+                    remaining: rupees(quote.amountAtHub),
+                  })}
                 </p>
                 <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
                   {quote.atHub.map((line) => (
-                    <li key={line.label}>
-                      {line.label}: {rupees(line.amount)}
+                    <li key={line.labelKey}>
+                      {t(line.labelKey as TKey, line.labelVars)}: {rupees(line.amount)}
                     </li>
                   ))}
                 </ul>
@@ -229,7 +234,7 @@ function JourneyPage() {
             }
             action={
               <ActionButton
-                label={`Pay ${rupees(plan.reservation_amount)} and reserve`}
+                label={t("payAndReserve", { amount: rupees(plan.reservation_amount) })}
                 run={() => payReservation({ data: { bookingId: booking.id } })}
                 onDone={refresh}
               />
@@ -240,11 +245,16 @@ function JourneyPage() {
         {step === "TRAVEL" && (
           <StepCard
             icon={<MapPin className="h-5 w-5 text-primary" />}
-            title="How will you reach the hub?"
+            title={t("travelTitle")}
             body={
               <div className="text-sm text-muted-foreground">
                 <p>
-                  {hub.name}, {hub.address}. Open {hub.opens_at}–{hub.closes_at}.
+                  {t("hubOpenLine", {
+                    name: hub.name,
+                    address: hub.address,
+                    opens: hub.opens_at,
+                    closes: hub.closes_at,
+                  })}
                 </p>
                 <p className="mt-2">
                   {t("carryDocs")}
@@ -254,13 +264,13 @@ function JourneyPage() {
             action={
               <div className="flex flex-col gap-2 sm:flex-row">
                 <ActionButton
-                  label="Book a Rapido ride"
+                  label={t("bookRapido")}
                   run={() => setTravelMode({ data: { bookingId: booking.id, mode: "RAPIDO" } })}
                   onDone={refresh}
                 />
                 <ActionButton
                   variant="outline"
-                  label="I'll travel on my own"
+                  label={t("travelSelf")}
                   run={() => setTravelMode({ data: { bookingId: booking.id, mode: "SELF" } })}
                   onDone={refresh}
                 />
@@ -272,13 +282,12 @@ function JourneyPage() {
         {step === "AT_HUB" && (
           <StepCard
             icon={<MapPin className="h-5 w-5 text-primary" />}
-            title="Check in at the hub"
+            title={t("checkInTitle")}
             body={
               <div className="text-sm text-muted-foreground">
                 {booking.rapido_coupon && (
                   <p className="mb-2 rounded-xl bg-accent px-3 py-2 text-accent-foreground">
-                    Rapido coupon <strong>{booking.rapido_coupon}</strong> — apply it in Rapido for
-                    your ride to the hub.
+                    {t("rapidoCoupon", { code: booking.rapido_coupon })}
                   </p>
                 )}
                 <p>
@@ -288,7 +297,7 @@ function JourneyPage() {
             }
             action={
               <ActionButton
-                label="I've reached the hub"
+                label={t("reachedHub")}
                 run={() => checkInAtHub({ data: { bookingId: booking.id } })}
                 onDone={refresh}
               />
@@ -313,7 +322,7 @@ function JourneyPage() {
         {step === "HANDOVER" && (
           <StepCard
             icon={<Bike className="h-5 w-5 text-primary" />}
-            title="Collect your bike"
+            title={t("collectTitle")}
             body={
               <div className="text-sm text-muted-foreground">
                 <p>{t("handoverHint")}</p>
@@ -321,7 +330,7 @@ function JourneyPage() {
             }
             action={
               <ActionButton
-                label="I've received the bike"
+                label={t("receivedBike")}
                 run={() => confirmHandover({ data: { bookingId: booking.id } })}
                 onDone={async () => {
                   await refresh();
@@ -335,16 +344,15 @@ function JourneyPage() {
         {booking.status === "REJECTED" && (
           <StepCard
             icon={<ShieldAlert className="h-5 w-5 text-destructive" />}
-            title="We can't proceed with this rental"
+            title={t("rejectedTitle")}
             body={
               <p className="text-sm text-muted-foreground">
-                {booking.rejection_reason ??
-                  "Your documents could not be verified for this rental. Your ₹199 reservation will be refunded to the original payment method within 5–7 working days."}
+                {booking.rejection_reason ?? t("rejectedBody")}
               </p>
             }
             action={
               <Button variant="outline" onClick={() => navigate({ to: "/" })}>
-                Back to bikes
+                {t("backToBikes")}
               </Button>
             }
           />
@@ -355,15 +363,14 @@ function JourneyPage() {
 }
 
 function EmptyState({ onBrowse }: { onBrowse: () => void }) {
+  const { t } = useLanguage();
   return (
     <div className="rounded-2xl border border-border bg-card p-6 text-center">
       <Bike className="mx-auto h-8 w-8 text-primary" />
-      <h1 className="mt-3 text-lg font-semibold">You don't have a booking yet</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Pick a bike, a hub and a plan to get started.
-      </p>
+      <h1 className="mt-3 text-lg font-semibold">{t("noBookingTitle")}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{t("noBookingBody")}</p>
       <Button className="mt-4" onClick={onBrowse}>
-        Browse bikes
+        {t("browseBikes")}
       </Button>
     </div>
   );
@@ -407,13 +414,14 @@ function ActionButton<T>({
   onDone: () => void | Promise<void>;
   variant?: "outline";
 }) {
+  const { t } = useLanguage();
   const mutation = useMutation({
     mutationFn: run,
     onSuccess: async () => {
       await onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Something went wrong."),
+      toast.error(error instanceof Error ? error.message : t("genericError")),
   });
 
   return (
@@ -456,7 +464,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Could not run the check."),
+      toast.error(error instanceof Error ? error.message : t("couldNotCheck")),
   });
 
   if (result) {
@@ -464,9 +472,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       <StepCard
         icon={<BadgeCheck className="h-5 w-5 text-primary" />}
         title={
-          result === "LIKELY_ELIGIBLE"
-            ? "You're likely eligible"
-            : "We'll need a closer look at the hub"
+          result === "LIKELY_ELIGIBLE" ? t("eligibleTitle") : t("eligibleCloserLook")
         }
         body={
           <p className="text-sm text-muted-foreground">{t("eligibilityIndicative")}</p>
@@ -478,13 +484,13 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
   return (
     <StepCard
       icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
-      title="Optional: check your eligibility now"
+      title={t("eligibilityTitle")}
       body={
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">{t("eligibilityHint")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="dl">Driving Licence number</Label>
+              <Label htmlFor="dl">{t("dlNumberLabel")}</Label>
               <Input
                 id="dl"
                 value={dlNumber}
@@ -493,7 +499,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dlname">Name on licence</Label>
+              <Label htmlFor="dlname">{t("nameOnLicence")}</Label>
               <Input
                 id="dlname"
                 value={dlName}
@@ -501,7 +507,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dob">Date of birth</Label>
+              <Label htmlFor="dob">{t("dateOfBirth")}</Label>
               <Input
                 id="dob"
                 type="date"
@@ -516,7 +522,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
                 className="w-full"
                 onClick={() => setSelfie(true)}
               >
-                {selfie ? "Selfie captured" : "Capture selfie"}
+                {selfie ? t("selfieCaptured") : t("captureSelfie")}
               </Button>
             </div>
           </div>
@@ -526,10 +532,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
               onCheckedChange={(value) => setConsent(value === true)}
               className="mt-0.5"
             />
-            <span>
-              I authorise DriveX to perform identity, document and rental eligibility checks
-              required to process my rental request.
-            </span>
+            <span>{t("eligibilityConsent")}</span>
           </label>
         </div>
       }
@@ -541,11 +544,11 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             disabled={submit.isPending || !consent || dlNumber.length < 10 || !dlName.trim()}
           >
             {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Check my eligibility
+            {t("checkEligibility")}
           </Button>
           <ActionButton
             variant="outline"
-            label="Skip and continue"
+            label={t("skipContinue")}
             run={() => skipEligibility({ data: { bookingId } })}
             onDone={onDone}
           />
@@ -577,20 +580,20 @@ function HubKycStep({
       }),
     onSuccess: (data) => {
       if (data.status === "ACTION_REQUIRED") {
-        toast.error("Some details need to be captured again.");
+        toast.error(t("kycActionNeeded"));
       } else {
-        toast.success("Your documents are verified.");
+        toast.success(t("kycVerified"));
       }
       onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Could not submit your documents."),
+      toast.error(error instanceof Error ? error.message : t("kycSubmitFailed")),
   });
 
   return (
     <StepCard
       icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
-      title="Document verification at the hub"
+      title={t("kycTitle")}
       body={
         <div className="space-y-3">
           {actionRequired && (
@@ -601,7 +604,7 @@ function HubKycStep({
           <p className="text-sm text-muted-foreground">{t("kycHint")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="hub-dl">Driving Licence number</Label>
+              <Label htmlFor="hub-dl">{t("dlNumberLabel")}</Label>
               <Input
                 id="hub-dl"
                 value={dlNumber}
@@ -610,7 +613,7 @@ function HubKycStep({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="hub-name">Name on licence</Label>
+              <Label htmlFor="hub-name">{t("nameOnLicence")}</Label>
               <Input
                 id="hub-name"
                 value={dlName}
@@ -618,12 +621,12 @@ function HubKycStep({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="proof">Address proof</Label>
+              <Label htmlFor="proof">{t("addressProofLabel")}</Label>
               <Input
                 id="proof"
                 value={addressProof}
                 onChange={(event) => setAddressProof(event.target.value)}
-                placeholder="Aadhaar / Passport / Utility bill"
+                placeholder={t("addressProofPlaceholder")}
               />
             </div>
             <div className="flex items-end">
@@ -633,7 +636,7 @@ function HubKycStep({
                 className="w-full"
                 onClick={() => setSelfie(true)}
               >
-                {selfie ? "Selfie captured" : "Capture selfie"}
+                {selfie ? t("selfieCaptured") : t("captureSelfie")}
               </Button>
             </div>
           </div>
@@ -646,7 +649,7 @@ function HubKycStep({
           disabled={submit.isPending}
         >
           {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Submit documents
+          {t("submitDocuments")}
         </Button>
       }
     />
@@ -654,6 +657,7 @@ function HubKycStep({
 }
 
 function PaymentStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
+  const { t } = useLanguage();
   const breakdown = useQuery({
     queryKey: ["final-breakdown", bookingId],
     queryFn: () => getFinalPaymentBreakdown({ data: { bookingId } }),
@@ -664,48 +668,50 @@ function PaymentStep({ bookingId, onDone }: { bookingId: string; onDone: () => v
       payFinalAmount({ data: { bookingId, simulateFailure } }),
     onSuccess: (data) => {
       if (data.status === "FAILED") {
-        toast.error("That payment didn't go through. Your bike is still held — try again.");
+        toast.error(t("paymentFailed"));
       } else {
-        toast.success("Payment received.");
+        toast.success(t("paymentReceived"));
         onDone();
       }
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Payment could not be processed."),
+      toast.error(error instanceof Error ? error.message : t("paymentError")),
   });
 
   return (
     <StepCard
       icon={<Wallet className="h-5 w-5 text-primary" />}
-      title="Pay the remaining amount"
+      title={t("payRemainingTitle")}
       body={
         breakdown.isLoading || !breakdown.data ? (
-          <p className="text-sm text-muted-foreground">Preparing your payment summary…</p>
+          <p className="text-sm text-muted-foreground">{t("preparingSummary")}</p>
         ) : (
           <div className="space-y-3">
             <dl className="space-y-1.5 text-sm">
               {breakdown.data.lines.map((line) => (
-                <div key={line.label} className="flex justify-between gap-4">
-                  <dt className="text-muted-foreground">{line.label}</dt>
+                <div key={line.labelKey} className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">
+                    {t(line.labelKey as TKey, line.labelVars)}
+                  </dt>
                   <dd className="font-medium">{rupees(line.amount)}</dd>
                 </div>
               ))}
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">Reservation already paid</dt>
+                <dt className="text-muted-foreground">{t("reservationAlreadyPaid")}</dt>
                 <dd className="font-medium text-primary">
                   −{rupees(breakdown.data.reservationCredit)}
                 </dd>
               </div>
               <div className="flex justify-between gap-4 border-t border-border pt-2 text-base">
-                <dt className="font-semibold">Amount due now</dt>
+                <dt className="font-semibold">{t("amountDueNow")}</dt>
                 <dd className="font-semibold">{rupees(breakdown.data.amountDue)}</dd>
               </div>
             </dl>
             <details className="rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
-              <summary className="cursor-pointer font-medium">Other charges that can apply</summary>
+              <summary className="cursor-pointer font-medium">{t("otherCharges")}</summary>
               <ul className="mt-2 list-disc space-y-1 pl-4">
-                {OTHER_POSSIBLE_CHARGES.map((item) => (
-                  <li key={item}>{item}</li>
+                {OTHER_POSSIBLE_CHARGE_KEYS.map((key) => (
+                  <li key={key}>{t(key)}</li>
                 ))}
               </ul>
             </details>
@@ -720,7 +726,7 @@ function PaymentStep({ bookingId, onDone }: { bookingId: string; onDone: () => v
             disabled={pay.isPending}
           >
             {pay.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Pay now
+            {t("payNowLabel")}
           </Button>
           <Button
             variant="ghost"
@@ -728,7 +734,7 @@ function PaymentStep({ bookingId, onDone }: { bookingId: string; onDone: () => v
             onClick={() => pay.mutate(true)}
             disabled={pay.isPending}
           >
-            Simulate a failed payment
+            {t("simulateFailure")}
           </Button>
         </div>
       }
@@ -737,33 +743,21 @@ function PaymentStep({ bookingId, onDone }: { bookingId: string; onDone: () => v
 }
 
 function AgreementStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
+  const { t } = useLanguage();
   const [read, setRead] = useState(false);
 
   return (
     <StepCard
       icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
-      title="Accept your rental agreement"
+      title={t("agreementTitle")}
       body={
         <div className="space-y-3">
           <div className="max-h-52 overflow-y-auto rounded-xl border border-border bg-background p-3 text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">DriveX rental agreement (summary)</p>
-            <p className="mt-2">
-              You agree to use the vehicle lawfully, keep it in the condition recorded at handover,
-              and return it to the agreed hub at the end of your rental period.
-            </p>
-            <p className="mt-2">
-              Rental payments are due on the scheduled date. Late payments attract the late fee
-              disclosed in your plan. Traffic challans issued during your rental are payable by you.
-            </p>
-            <p className="mt-2">
-              Kilometres beyond your plan allowance are charged at the per-kilometre rate shown in
-              your plan. Damage identified at return inspection is charged against your security
-              deposit, with photo evidence from handover and return shared with you.
-            </p>
-            <p className="mt-2">
-              Mandatory servicing must be completed at a DriveX hub at the interval shown in the
-              app. Riding an overdue vehicle can affect your damage liability.
-            </p>
+            <p className="font-medium text-foreground">{t("agreementHeading")}</p>
+            <p className="mt-2">{t("agreementP1")}</p>
+            <p className="mt-2">{t("agreementP2")}</p>
+            <p className="mt-2">{t("agreementP3")}</p>
+            <p className="mt-2">{t("agreementP4")}</p>
           </div>
           <label className="flex items-start gap-2 text-xs text-muted-foreground">
             <Checkbox
@@ -771,20 +765,20 @@ function AgreementStep({ bookingId, onDone }: { bookingId: string; onDone: () =>
               onCheckedChange={(value) => setRead(value === true)}
               className="mt-0.5"
             />
-            <span>I have read and accept the rental agreement.</span>
+            <span>{t("agreementAcceptCheck")}</span>
           </label>
         </div>
       }
       action={
         read ? (
           <ActionButton
-            label="Accept and continue"
+            label={t("acceptContinue")}
             run={() => acceptAgreement({ data: { bookingId } })}
             onDone={onDone}
           />
         ) : (
           <Button disabled className="w-full sm:w-auto">
-            Accept and continue
+            {t("acceptContinue")}
           </Button>
         )
       }

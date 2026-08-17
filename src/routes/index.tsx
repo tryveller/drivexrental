@@ -54,7 +54,7 @@ function Discovery() {
 
   const coords = location?.coords ?? null;
   const locality = location?.locality ?? "";
-  const locationLabel = locality || location?.pinCode || "Near me";
+  const locationLabel = locality || location?.pinCode || t("nearMe");
 
   // V1 launches from a single hub: the one nearest the rider.
   const hub = useMemo(() => {
@@ -169,7 +169,9 @@ function Discovery() {
             <MapPin className="h-5 w-5 text-primary" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold">{hub.locality} hub</span>
+            <span className="block truncate text-sm font-semibold">
+              {t("hubNamed", { locality: hub.locality })}
+            </span>
             <span className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap text-[11px] text-muted-foreground">
               <Clock className="h-3 w-3" />
               {hub.opens_at.slice(0, 5)}–{hub.closes_at.slice(0, 5)}

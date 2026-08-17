@@ -31,7 +31,14 @@ import {
 } from "@/lib/rental.functions";
 import { SERVICE_INTERVAL_DAYS, SERVICE_INTERVAL_KM } from "@/lib/pricing";
 import { longDate, modelTitle, rupees, shortDate } from "@/lib/format";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type TKey } from "@/lib/i18n";
+
+const HEALTH_KEYS: Record<string, TKey> = {
+  Good: "healthGood",
+  "Service Due Soon": "healthServiceDueSoon",
+  "Service Overdue": "healthServiceOverdue",
+  "Attention Required": "healthAttention",
+};
 
 export const Route = createFileRoute("/my-bike")({
   head: () => ({
@@ -72,7 +79,7 @@ function MyBikePage() {
 
   if (session.loading || bike.isLoading) {
     return (
-      <AppShell subtitle="My Bike">
+      <AppShell subtitle={t("myBikeSubtitle")}>
         <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loadingBike")}
         </div>
@@ -83,13 +90,13 @@ function MyBikePage() {
   const data = bike.data;
   if (!data) {
     return (
-      <AppShell subtitle="My Bike">
+      <AppShell subtitle={t("myBikeSubtitle")}>
         <div className="rounded-2xl border border-border bg-card p-6 text-center">
           <Bike className="mx-auto h-8 w-8 text-primary" />
-          <h1 className="mt-3 text-lg font-semibold">No active rental yet</h1>
+          <h1 className="mt-3 text-lg font-semibold">{t("noActiveRental")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("noRental")}</p>
           <Button className="mt-4" onClick={() => navigate({ to: "/journey" })}>
-            View my booking
+            {t("viewMyBooking")}
           </Button>
         </div>
       </AppShell>
@@ -104,28 +111,33 @@ function MyBikePage() {
       : health.status === "Service Due Soon"
         ? "bg-secondary text-secondary-foreground"
         : "bg-destructive/10 text-destructive";
-
+  const healthDetail = t(health.detailUnit === "days" ? "unitDays" : "unitKm", {
+    value: health.detailValue,
+  });
   return (
-    <AppShell subtitle="My Bike">
+    <AppShell subtitle={t("myBikeSubtitle")}>
       <header className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold">
-              {model ? modelTitle(model.brand, model.name) : "Your bike"}
+              {model ? modelTitle(model.brand, model.name) : t("yourBike")}
             </h1>
             <p className="text-sm text-muted-foreground">
               {vehicle.registration_number} ·{" "}
-              {vehicle.condition === "NEW" ? "New bike" : "Refurbished bike"}
+              {vehicle.condition === "NEW" ? t("newBike") : t("refurbishedBike")}
             </p>
           </div>
           <Badge className={healthTone} variant="secondary">
-            {health.status}
+            {t(HEALTH_KEYS[health.status] ?? "healthGood")}
           </Badge>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Odometer {vehicle.odometer_km.toLocaleString("en-IN")} km · fuel {vehicle.fuel_percent}%
+          {t("odometerLine", {
+            km: vehicle.odometer_km.toLocaleString("en-IN"),
+            fuel: vehicle.fuel_percent,
+          })}
           {vehicle.telemetry_updated_at
-            ? ` · updated ${longDate(vehicle.telemetry_updated_at)}`
+            ? ` · ${t("updatedOn", { date: longDate(vehicle.telemetry_updated_at) })}`
             : ""}
         </p>
       </header>
@@ -133,51 +145,56 @@ function MyBikePage() {
       <Tabs defaultValue="overview" className="mt-5">
         <TabsList className="w-full">
           <TabsTrigger value="overview" className="flex-1">
-            Overview
+            {t("tabOverview")}
           </TabsTrigger>
           <TabsTrigger value="service" className="flex-1">
-            Service
+            {t("tabService")}
           </TabsTrigger>
           <TabsTrigger value="money" className="flex-1">
-            Payments
+            {t("tabPayments")}
           </TabsTrigger>
           <TabsTrigger value="return" className="flex-1">
-            Return
+            {t("tabReturn")}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <Card icon={<Gauge className="h-5 w-5 text-primary" />} title="Kilometres this period">
+          <Card icon={<Gauge className="h-5 w-5 text-primary" />} title={t("kmThisPeriod")}>
             <Progress value={km.percentUsed} className="mt-1" />
             <p className="mt-2 text-sm text-muted-foreground">
-              {km.usedKm.toLocaleString("en-IN")} of {km.includedKm.toLocaleString("en-IN")} km used
+              {t("kmUsedLine", {
+                used: km.usedKm.toLocaleString("en-IN"),
+                included: km.includedKm.toLocaleString("en-IN"),
+              })}
               {km.overKm > 0
-                ? ` · ${km.overKm} km over, ${rupees(km.overageAmount)} in extra charges so far`
-                : ` · ${km.remainingKm.toLocaleString("en-IN")} km left`}
+                ? ` · ${t("kmOverLine", { over: km.overKm, amount: rupees(km.overageAmount) })}`
+                : ` · ${t("kmLeftLine", { remaining: km.remainingKm.toLocaleString("en-IN") })}`}
             </p>
             {rental.period_resets_on && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Allowance resets on {shortDate(rental.period_resets_on)}
+                {t("allowanceResets", { date: shortDate(rental.period_resets_on) })}
               </p>
             )}
           </Card>
 
-          <Card icon={<Wrench className="h-5 w-5 text-primary" />} title="Bike health">
+          <Card icon={<Wrench className="h-5 w-5 text-primary" />} title={t("bikeHealth")}>
             <p className="text-sm text-muted-foreground">
-              Servicing is required every {SERVICE_INTERVAL_DAYS} days or{" "}
-              {SERVICE_INTERVAL_KM.toLocaleString("en-IN")} km, whichever comes first.
+              {t("serviceIntervalLine", {
+                days: SERVICE_INTERVAL_DAYS,
+                km: SERVICE_INTERVAL_KM.toLocaleString("en-IN"),
+              })}
             </p>
             <p className="mt-2 text-sm">
               {health.status === "Service Overdue"
-                ? `Service is overdue by ${health.detail}. Please book a slot now.`
-                : `Next service due in ${health.detail}.`}
+                ? t("serviceOverdueLine", { detail: healthDetail })
+                : t("nextServiceLine", { detail: healthDetail })}
             </p>
           </Card>
 
           {pendingChallans.length > 0 && (
             <Card
               icon={<AlertTriangle className="h-5 w-5 text-destructive" />}
-              title="Traffic challans to pay"
+              title={t("challansTitle")}
             >
               <ul className="space-y-3">
                 {pendingChallans.map((challan) => (
@@ -203,9 +220,9 @@ function MyBikePage() {
 
         <TabsContent value="service" className="space-y-4">
           <ServiceBooking rentalId={rental.id} hubId={hub?.id ?? ""} onDone={refresh} />
-          <Card icon={<CalendarClock className="h-5 w-5 text-primary" />} title="Service history">
+          <Card icon={<CalendarClock className="h-5 w-5 text-primary" />} title={t("serviceHistory")}>
             {services.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No services booked yet.</p>
+              <p className="text-sm text-muted-foreground">{t("noServices")}</p>
             ) : (
               <ul className="space-y-2 text-sm">
                 {services.map((service) => (
@@ -222,34 +239,35 @@ function MyBikePage() {
         </TabsContent>
 
         <TabsContent value="money" className="space-y-4">
-          <Card icon={<ReceiptText className="h-5 w-5 text-primary" />} title="Next payment">
+          <Card icon={<ReceiptText className="h-5 w-5 text-primary" />} title={t("nextPayment")}>
             <p className="text-sm text-muted-foreground">
-              {rupees(dues.rent)} due
-              {rental.next_payment_due_on ? ` on ${shortDate(rental.next_payment_due_on)}` : ""}.
-              Late payments attract {rupees(plan.late_fee_per_day)} per day.
+              {rental.next_payment_due_on
+                ? t("nextPaymentOn", {
+                    amount: rupees(dues.rent),
+                    date: shortDate(rental.next_payment_due_on),
+                  })
+                : t("nextPaymentNow", { amount: rupees(dues.rent) })}{" "}
+              {t("lateFeeLine", { amount: rupees(plan.late_fee_per_day) })}
             </p>
             <div className="mt-3">
               <PayButton
-                label={`Pay ${rupees(dues.rent)}`}
+                label={t("payAmount", { amount: rupees(dues.rent) })}
                 run={() => payRent({ data: { rentalId: rental.id } })}
                 onDone={refresh}
               />
             </div>
           </Card>
 
-          <Card icon={<FileText className="h-5 w-5 text-primary" />} title="Payment history">
+          <Card icon={<FileText className="h-5 w-5 text-primary" />} title={t("paymentHistory")}>
             {data.ledger.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nothing here yet.</p>
+              <p className="text-sm text-muted-foreground">{t("nothingYet")}</p>
             ) : (
               <ul className="space-y-2 text-sm">
                 {data.ledger.map((entry) => (
                   <li key={entry.id} className="flex justify-between gap-3">
                     <span>
                       <span className="block font-medium">
-                        {entry.entry_type
-                          .replaceAll("_", " ")
-                          .toLowerCase()
-                          .replace(/^./, (c) => c.toUpperCase())}
+                        {t(`ledger${entry.entry_type}` as TKey)}
                       </span>
                       <span className="block text-xs text-muted-foreground">
                         {entry.note ?? shortDate(entry.created_at)}
@@ -264,17 +282,17 @@ function MyBikePage() {
         </TabsContent>
 
         <TabsContent value="return" className="space-y-4">
-          <Card icon={<Bike className="h-5 w-5 text-primary" />} title="Return your bike">
+          <Card icon={<Bike className="h-5 w-5 text-primary" />} title={t("returnTitle")}>
             <p className="text-sm text-muted-foreground">
               {hub?.name ? `${hub.name} · ` : ""}
               {t("returnHint")}
             </p>
             <dl className="mt-3 space-y-1.5 text-sm">
-              <Row label="Refundable security deposit" value={rupees(plan.deposit_amount)} />
-              <Row label="Pending challans" value={rupees(dues.challans)} />
-              <Row label="Extra kilometre charges" value={rupees(dues.kmOverage)} />
+              <Row label={t("lineDeposit")} value={rupees(plan.deposit_amount)} />
+              <Row label={t("pendingChallansLabel")} value={rupees(dues.challans)} />
+              <Row label={t("extraKmLabel")} value={rupees(dues.kmOverage)} />
               <Row
-                label="Estimated refund before inspection"
+                label={t("estimatedRefund")}
                 value={rupees(
                   Math.max(0, plan.deposit_amount - dues.challans - dues.kmOverage),
                 )}
@@ -286,7 +304,7 @@ function MyBikePage() {
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               {rental.status === "ACTIVE" ? (
                 <PayButton
-                  label="Request a return slot"
+                  label={t("requestReturnSlot")}
                   run={() =>
                     requestReturn({
                       data: {
@@ -300,11 +318,11 @@ function MyBikePage() {
                 />
               ) : (
                 <PayButton
-                  label="Complete return inspection"
+                  label={t("completeReturnInspection")}
                   run={() => completeReturn({ data: { rentalId: rental.id } })}
                   onDone={async () => {
                     await refresh();
-                    toast.success("Return recorded. Your refund is being processed.");
+                    toast.success(t("returnRecorded"));
                   }}
                 />
               )}
@@ -356,13 +374,14 @@ function PayButton<T>({
   run: () => Promise<T>;
   onDone: () => void | Promise<void>;
 }) {
+  const { t } = useLanguage();
   const mutation = useMutation({
     mutationFn: run,
     onSuccess: async () => {
       await onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Something went wrong."),
+      toast.error(error instanceof Error ? error.message : t("genericError")),
   });
 
   return (
@@ -382,6 +401,7 @@ function ServiceBooking({
   hubId: string;
   onDone: () => void;
 }) {
+  const { t } = useLanguage();
   const [date, setDate] = useState("");
   const [slot, setSlot] = useState("10:00 AM – 12:00 PM");
 
@@ -389,18 +409,18 @@ function ServiceBooking({
     mutationFn: () =>
       bookService({ data: { rentalId, hubId, scheduledOn: date, slot } }),
     onSuccess: () => {
-      toast.success("Service slot booked.");
+      toast.success(t("serviceBooked"));
       onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Could not book that slot."),
+      toast.error(error instanceof Error ? error.message : t("serviceBookFailed")),
   });
 
   return (
-    <Card icon={<Wrench className="h-5 w-5 text-primary" />} title="Book a service slot">
+    <Card icon={<Wrench className="h-5 w-5 text-primary" />} title={t("bookServiceTitle")}>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="service-date">Date</Label>
+          <Label htmlFor="service-date">{t("dateLabel")}</Label>
           <Input
             id="service-date"
             type="date"
@@ -409,7 +429,7 @@ function ServiceBooking({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="service-slot">Slot</Label>
+          <Label htmlFor="service-slot">{t("slotLabel")}</Label>
           <select
             id="service-slot"
             value={slot}
@@ -429,7 +449,7 @@ function ServiceBooking({
         disabled={!date || !hubId || book.isPending}
       >
         {book.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Book slot
+        {t("bookSlot")}
       </Button>
     </Card>
   );

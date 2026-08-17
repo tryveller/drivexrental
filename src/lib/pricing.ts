@@ -19,7 +19,13 @@ export type PlanConfig = {
   rto_total_months: number | null;
 };
 
-export type QuoteLine = { label: string; amount: number };
+// Labels are copy keys (resolved through i18n at render time), never English
+// strings, so every amount line reads in the rider's language.
+export type QuoteLine = {
+  labelKey: string;
+  labelVars?: Record<string, string | number>;
+  amount: number;
+};
 
 export type Quote = {
   payNow: number;
@@ -35,21 +41,22 @@ export function buildQuote(plan: PlanConfig): Quote {
 
   if (plan.plan_type === "RTO") {
     if (plan.downpayment_amount > 0) {
-      lines.push({ label: "Downpayment", amount: plan.downpayment_amount });
+      lines.push({ labelKey: "lineDownpayment", amount: plan.downpayment_amount });
     }
     if (plan.processing_fee > 0) {
-      lines.push({ label: "Processing / registration fee", amount: plan.processing_fee });
+      lines.push({ labelKey: "lineProcessingFee", amount: plan.processing_fee });
     }
     if (plan.rental_amount > 0) {
-      lines.push({ label: "First monthly payment", amount: plan.rental_amount });
+      lines.push({ labelKey: "lineFirstMonthly", amount: plan.rental_amount });
     }
   } else {
     lines.push({
-      label: `First ${plan.billing_period} rent`,
+      labelKey: "lineFirstRent",
+      labelVars: { period: plan.billing_period },
       amount: plan.rental_amount,
     });
     if (plan.deposit_amount > 0) {
-      lines.push({ label: "Refundable security deposit", amount: plan.deposit_amount });
+      lines.push({ labelKey: "lineDeposit", amount: plan.deposit_amount });
     }
   }
 
@@ -64,14 +71,14 @@ export function buildQuote(plan: PlanConfig): Quote {
   };
 }
 
-export const OTHER_POSSIBLE_CHARGES = [
-  "Extra kilometre charges beyond your plan allowance",
-  "Late-payment charges if a rental payment is missed",
-  "Traffic challans issued against the vehicle",
-  "Damage charges identified at return inspection",
-  "Processing / registration charges where applicable",
-  "Other charges disclosed in your rental agreement",
-];
+export const OTHER_POSSIBLE_CHARGE_KEYS = [
+  "chargeExtraKm",
+  "chargeLateFee",
+  "chargeChallan",
+  "chargeDamage",
+  "chargeProcessing",
+  "chargeOther",
+] as const;
 
 export type KmUsage = {
   usedKm: number;
@@ -110,6 +117,9 @@ export type BikeHealth = {
   daysToService: number;
   kmToService: number;
   detail: string;
+  /** Localisable form of `detail`: a number plus the unit to render. */
+  detailValue: number;
+  detailUnit: "days" | "km";
 };
 
 export function computeBikeHealth(input: {
@@ -126,21 +136,21 @@ export function computeBikeHealth(input: {
     : SERVICE_INTERVAL_DAYS;
   const daysToService = SERVICE_INTERVAL_DAYS - daysSince;
 
-  const detail =
-    daysToService <= kmToService / (SERVICE_INTERVAL_KM / SERVICE_INTERVAL_DAYS)
-      ? `${Math.abs(daysToService)} days`
-      : `${Math.abs(kmToService)} km`;
+  const byDays = daysToService <= kmToService / (SERVICE_INTERVAL_KM / SERVICE_INTERVAL_DAYS);
+  const detailValue = Math.abs(byDays ? daysToService : kmToService);
+  const detailUnit = byDays ? ("days" as const) : ("km" as const);
+  const detail = `${detailValue} ${detailUnit}`;
 
   if (input.hasOpenIssue) {
-    return { status: "Attention Required", daysToService, kmToService, detail };
+    return { status: "Attention Required", daysToService, kmToService, detail, detailValue, detailUnit };
   }
   if (daysToService < 0 || kmToService < 0) {
-    return { status: "Service Overdue", daysToService, kmToService, detail };
+    return { status: "Service Overdue", daysToService, kmToService, detail, detailValue, detailUnit };
   }
   if (daysToService <= 3 || kmToService <= 250) {
-    return { status: "Service Due Soon", daysToService, kmToService, detail };
+    return { status: "Service Due Soon", daysToService, kmToService, detail, detailValue, detailUnit };
   }
-  return { status: "Good", daysToService, kmToService, detail };
+  return { status: "Good", daysToService, kmToService, detail, detailValue, detailUnit };
 }
 
 export function distanceKm(
@@ -161,7 +171,7 @@ export function distanceKm(
 // telemetry: odometer, service recency and new/refurbished condition.
 export type ConditionScore = {
   score: number;
-  label: "Excellent" | "Very good" | "Good" | "Fair";
+  labelKey: "condExcellent" | "condVeryGood" | "condGood" | "condFair";
 };
 
 export function computeConditionScore(vehicle: {
@@ -182,7 +192,13 @@ export function computeConditionScore(vehicle: {
     55,
     Math.round(base - agePenalty - servicePenalty - freshnessPenalty),
   );
-  const label =
-    score >= 92 ? "Excellent" : score >= 84 ? "Very good" : score >= 74 ? "Good" : "Fair";
-  return { score, label };
+  const labelKey =
+    score >= 92
+      ? ("condExcellent" as const)
+      : score >= 84
+        ? ("condVeryGood" as const)
+        : score >= 74
+          ? ("condGood" as const)
+          : ("condFair" as const);
+  return { score, labelKey };
 }
