@@ -17,6 +17,7 @@ import { LanguageGate } from "@/components/drivex/LanguageGate";
 import { LocationProvider } from "@/lib/location";
 import { LocationGate } from "@/components/drivex/LocationGate";
 import { SplashScreen } from "@/components/drivex/SplashScreen";
+import { AccessGate } from "@/components/drivex/AccessGate";
 
 function NotFoundComponent() {
   return (
@@ -133,14 +134,17 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <LocationProvider>
-          <SplashScreen>
-            <LanguageGate>
-              <LocationGate>
-                {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-                <Outlet />
-              </LocationGate>
-            </LanguageGate>
-          </SplashScreen>
+          {/* Internal-only PIN gate. Remove this wrapper (or set PROTOTYPE_GATE_ENABLED=false) at launch. */}
+          <AccessGate>
+            <SplashScreen>
+              <LanguageGate>
+                <LocationGate>
+                  {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                  <Outlet />
+                </LocationGate>
+              </LanguageGate>
+            </SplashScreen>
+          </AccessGate>
         </LocationProvider>
         <Toaster />
       </LanguageProvider>
