@@ -12,6 +12,15 @@
 // to fill the other languages, and `bun run i18n:check` before shipping.
 
 export const COPY = {
+  loadMyBookingTitle: { en: "Load my booking" },
+  loadMyBookingBody: {
+    en: "Reserved on another phone or at the hub? Enter your mobile number to continue.",
+  },
+  reservedBikeTitle: { en: "Your reserved bike" },
+  resumeJourney: { en: "Continue where you left off" },
+  goToMyBike: { en: "Go to My Bike" },
+  alreadyReserved: { en: "Already reserved a bike?" },
+  bookingRef: { en: "Booking {code}" },
   perDayLabel: {
     ne: "प्रति दिन",
     "or": "ପ୍ରତି ଦିନ",
