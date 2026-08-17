@@ -107,7 +107,7 @@ function Discovery() {
   }, [hub, catalog.data]);
 
   const badges = useMemo(
-    () => bestInClass(bikes.map((row) => row.model.name)),
+    () => bestInClass(bikes.map((row) => row.model)),
     [bikes],
   );
 

@@ -896,6 +896,7 @@ export type Database = {
       }
       vehicle_models: {
         Row: {
+          best_for_key: string
           brand: string
           created_at: string
           engine: string | null
@@ -904,10 +905,17 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          kerb_weight_kg: number | null
+          mileage_kmpl: number | null
           name: string
+          range_km: number | null
+          safety_key: string
+          storage_litres: number
+          top_speed_kmph: number | null
           transmission: string
         }
         Insert: {
+          best_for_key?: string
           brand?: string
           created_at?: string
           engine?: string | null
@@ -916,10 +924,17 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          kerb_weight_kg?: number | null
+          mileage_kmpl?: number | null
           name: string
+          range_km?: number | null
+          safety_key?: string
+          storage_litres?: number
+          top_speed_kmph?: number | null
           transmission?: string
         }
         Update: {
+          best_for_key?: string
           brand?: string
           created_at?: string
           engine?: string | null
@@ -928,7 +943,13 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          kerb_weight_kg?: number | null
+          mileage_kmpl?: number | null
           name?: string
+          range_km?: number | null
+          safety_key?: string
+          storage_litres?: number
+          top_speed_kmph?: number | null
           transmission?: string
         }
         Relationships: []

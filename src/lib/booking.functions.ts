@@ -839,16 +839,6 @@ export const confirmHandover = createServerFn({ method: "POST" })
       .update({ status: "ACTIVE", handover_confirmed_at: new Date().toISOString() })
       .eq("id", booking.id);
 
-    await supabaseAdmin.from("challans").insert({
-      rental_id: rental.id,
-      customer_id: context.userId,
-      vehicle_id: vehicle.id,
-      challan_no: `KA${Math.floor(Math.random() * 900000 + 100000)}`,
-      violation: "No parking zone",
-      amount: 500,
-      location: "Sarjapur Road, Bengaluru",
-    });
-
     await track("vehicle_handed_over", {}, {
       customerId: context.userId,
       bookingId: booking.id,
