@@ -1,6 +1,7 @@
-import { Gauge, ShieldCheck, Wrench } from "lucide-react";
+import { Fuel, Gauge, Package, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
 import type { CatalogModel, CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore } from "@/lib/pricing";
+import { bikeSpec } from "@/lib/bike-specs";
 import { modelTitle, rupees, shortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -26,6 +27,8 @@ export function BikeCard({
   vehicle,
   fromAmount,
   fromPeriod,
+  unitsReady,
+  badges,
   selected,
   onSelect,
 }: {
@@ -33,11 +36,42 @@ export function BikeCard({
   vehicle: CatalogVehicle;
   fromAmount: number | null;
   fromPeriod: string | null;
+  unitsReady?: number;
+  badges?: string[];
   selected: boolean;
   onSelect: () => void;
 }) {
   const condition = computeConditionScore(vehicle);
+  const spec = bikeSpec(model.name);
   const { t } = useLanguage();
+
+  const specs = [
+    {
+      icon: Fuel,
+      label: spec.mileageKmpl ? t("specMileage") : t("specRange"),
+      value: spec.mileageKmpl
+        ? t("unitKmpl", { value: spec.mileageKmpl })
+        : t("unitKm", { value: spec.rangeKm ?? 0 }),
+    },
+    {
+      icon: Zap,
+      label: t("specTopSpeed"),
+      value: t("unitKmph", { value: spec.topSpeedKmph }),
+    },
+    {
+      icon: Package,
+      label: t("specStorage"),
+      value:
+        spec.storageLitres > 0
+          ? t("unitLitres", { value: spec.storageLitres })
+          : t("storageNone"),
+    },
+    {
+      icon: ShieldCheck,
+      label: t("specSafety"),
+      value: t(spec.safetyKey as never),
+    },
+  ];
 
   return (
     <button
@@ -90,6 +124,37 @@ export function BikeCard({
         <span className="ml-auto">
           {vehicle.condition === "NEW" ? t("condNew") : t("condRefurbished")}
         </span>
+      </div>
+
+      {(badges?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap gap-1.5 px-3 pb-2">
+          {badges?.map((badge) => (
+            <span
+              key={badge}
+              className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary"
+            >
+              <Sparkles className="h-2.5 w-2.5" />
+              {t(badge as never)}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border/70 px-3 py-3">
+        {specs.map((row) => (
+          <div key={row.label} className="min-w-0">
+            <dt className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+              <row.icon className="h-3 w-3 text-primary" />
+              {row.label}
+            </dt>
+            <dd className="truncate text-[11px] font-semibold">{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="flex items-center justify-between gap-2 border-t border-border/70 px-3 py-2 text-[10px] text-muted-foreground">
+        <span className="truncate font-medium text-foreground/80">{t(spec.bestForKey as never)}</span>
+        {unitsReady ? <span className="shrink-0">{t("unitsReady", { count: unitsReady })}</span> : null}
       </div>
     </button>
   );

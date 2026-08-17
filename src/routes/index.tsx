@@ -18,6 +18,7 @@ import {
 import { modelTitle } from "@/lib/format";
 import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore, computeDuration, distanceKm } from "@/lib/pricing";
+import { bestInClass } from "@/lib/bike-specs";
 import { useLanguage } from "@/lib/i18n";
 import { useRiderLocation } from "@/lib/location";
 import bannerImage from "@/assets/drivex-banner.jpg";
@@ -79,8 +80,10 @@ function Discovery() {
     const models = catalog.data?.models ?? [];
     const plans = catalog.data?.plans ?? [];
     const best = new Map<string, CatalogVehicle>();
+    const counts = new Map<string, number>();
     for (const vehicle of catalog.data?.vehicles ?? []) {
       if (vehicle.hub_id !== hub.id) continue;
+      counts.set(vehicle.model_id, (counts.get(vehicle.model_id) ?? 0) + 1);
       const current = best.get(vehicle.model_id);
       if (
         !current ||
@@ -99,9 +102,14 @@ function Discovery() {
         (min, plan) => (min === null || plan.rental_amount < min.rental_amount ? plan : min),
         null,
       );
-      return [{ model, vehicle, plans: modelPlans, cheapest }];
+      return [{ model, vehicle, plans: modelPlans, cheapest, units: counts.get(id) ?? 0 }];
     });
   }, [hub, catalog.data]);
+
+  const badges = useMemo(
+    () => bestInClass(bikes.map((row) => row.model.name)),
+    [bikes],
+  );
 
   const selected = bikes.find((row) => row.model.id === modelId) ?? null;
   const planOrder: Record<string, number> = { DAILY: 0, WEEKLY: 1, MONTHLY: 2 };
@@ -196,6 +204,10 @@ function Discovery() {
       )}
 
       <section className="mt-5">
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold">{t("compareHint")}</h2>
+          <span className="text-[11px] text-muted-foreground">{t("allChecked")}</span>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {bikes.map((row) => (
             <BikeCard
@@ -204,6 +216,8 @@ function Discovery() {
               vehicle={row.vehicle}
               fromAmount={row.cheapest?.rental_amount ?? null}
               fromPeriod={row.cheapest?.billing_period ?? null}
+              unitsReady={row.units}
+              badges={badges[row.model.name] ?? []}
               selected={modelId === row.model.id}
               onSelect={() => {
                 setModelId(row.model.id);
