@@ -40,7 +40,7 @@ export type Quote = {
   extraHours: number;
   /** Rent portion for the chosen duration. */
   rentAmount: number;
-  /** Total ÷ billed days, for the "≈ ₹X / day" line. */
+  /** Rent ÷ billed days (the refundable deposit is excluded). */
   perDay: number | null;
 };
 
@@ -161,10 +161,7 @@ export function buildQuote(plan: PlanConfig, duration?: RideDuration | null): Qu
     extraHours: duration?.extraHours ?? 0,
     rentAmount,
     perDay: duration
-      ? Math.round(
-          totalInitialLiability /
-            (duration.days + duration.extraHours / 24),
-        )
+      ? Math.round(rentAmount / (duration.days + duration.extraHours / 24))
       : null,
   };
 }
