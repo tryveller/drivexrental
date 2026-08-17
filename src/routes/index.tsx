@@ -15,9 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { modelTitle } from "@/lib/format";
+import { modelTitle, rupees } from "@/lib/format";
 import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
-import { computeConditionScore, computeDuration, distanceKm } from "@/lib/pricing";
+import { computeConditionScore, computeDuration, distanceKm, planDayRate } from "@/lib/pricing";
 import { bestInClass } from "@/lib/bike-specs";
 import { useLanguage } from "@/lib/i18n";
 import { useRiderLocation } from "@/lib/location";
