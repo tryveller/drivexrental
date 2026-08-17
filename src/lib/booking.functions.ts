@@ -353,9 +353,54 @@ export const payReservation = createServerFn({ method: "POST" })
 export const setTravelMode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { bookingId: string; mode: "RAPIDO" | "SELF" }) => input)
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: { bookingId: string; mode: "RAPIDO" | "SELF" }) => input)
   .handler(async ({ data, context }) => {
+export const changePickupDate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookingId: string; pickupOn: string; pickupSlot?: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { MAX_PICKUP_CHANGES, MAX_PICKUP_SHIFT_DAYS, isSlotKey } = await import("./pricing");
+
+    const { data: booking } = await supabaseAdmin
+      .from("bookings")
+      .select("id, pickup_on, pickup_slot, original_pickup_on, pickup_change_count, dropoff_on")
+      .eq("id", data.bookingId)
+      .eq("customer_id", context.userId)
+      .single();
+    if (!booking) throw new Error("Booking not found");
+
+    if ((booking.pickup_change_count ?? 0) >= MAX_PICKUP_CHANGES) {
+      return { ok: false as const, reason: "USED" as const };
+    }
+
+    const base = booking.original_pickup_on ?? booking.pickup_on;
+    if (!base) return { ok: false as const, reason: "NO_DATES" as const };
+
+    const limit = new Date(`${base}T00:00:00`);
+    limit.setDate(limit.getDate() + MAX_PICKUP_SHIFT_DAYS);
+    const next = new Date(`${data.pickupOn}T00:00:00`);
+    if (next <= new Date(`${base}T00:00:00`) || next > limit) {
+      return { ok: false as const, reason: "TOO_FAR" as const };
+    }
+
+    const slot = isSlotKey(data.pickupSlot) ? data.pickupSlot : (booking.pickup_slot ?? "MORNING");
+    const hold = new Date(`${data.pickupOn}T00:00:00`);
+    hold.setDate(hold.getDate() + 1);
+
+    await supabaseAdmin
+      .from("bookings")
+      .update({
+        pickup_on: data.pickupOn,
+        pickup_slot: slot,
+        pickup_change_count: (booking.pickup_change_count ?? 0) + 1,
+        pickup_changed_at: new Date().toISOString(),
+        reservation_expires_at: hold.toISOString(),
+      })
+      .eq("id", booking.id);
+
+    return { ok: true as const };
+  });
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
     const coupon = data.mode === "RAPIDO" ? "DRIVEX50" : null;
