@@ -2728,6 +2728,14 @@ export const COPY = {
     te: "కొత్త తేదీ మీ ఒరిజినల్ పికప్ తేదీ తర్వాత 3 రోజుల వరకు ఉండవచ్చు.",
     kn: "ಹೊಸ ದಿನಾಂಕ ನಿಮ್ಮ ಮೂಲ ಪಿಕಪ್ ದಿನಾಂಕದ 3 ದಿನಗಳ ನಂತರದವರೆಗೆ ಮಾತ್ರ ಇರಬಹುದು.",
     hi: "नई तारीख आपके ओरिजिनल पिक-अप तारीख के 3 दिन बाद तक ही हो सकती है।", en: "New date can be up to 3 days after your original pick-up date." },
+  cancelAction: {
+    ne: "रद्द गर्नुहोस्",
+    "or": "ବାତିଲ୍ କରନ୍ତୁ",
+    ml: "റദ്ദാക്കുക",
+    ta: "ரத்து செய்",
+    te: "రద్దు చేయండి",
+    kn: "ರದ್ದುಮಾಡಿ",
+    hi: "रद्द करें", en: "Cancel" },
 } as const;
 
 export type TKey = keyof typeof COPY;

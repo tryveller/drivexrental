@@ -1002,7 +1002,7 @@ function BookingDatesCard({
               {t("changePickupCta")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              {t("back")}
+              {t("cancelAction")}
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">{t("changePickupHint")}</p>
