@@ -374,13 +374,14 @@ function PayButton<T>({
   run: () => Promise<T>;
   onDone: () => void | Promise<void>;
 }) {
+  const { t } = useLanguage();
   const mutation = useMutation({
     mutationFn: run,
     onSuccess: async () => {
       await onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Something went wrong."),
+      toast.error(error instanceof Error ? error.message : t("genericError")),
   });
 
   return (
@@ -400,6 +401,7 @@ function ServiceBooking({
   hubId: string;
   onDone: () => void;
 }) {
+  const { t } = useLanguage();
   const [date, setDate] = useState("");
   const [slot, setSlot] = useState("10:00 AM – 12:00 PM");
 
@@ -407,18 +409,18 @@ function ServiceBooking({
     mutationFn: () =>
       bookService({ data: { rentalId, hubId, scheduledOn: date, slot } }),
     onSuccess: () => {
-      toast.success("Service slot booked.");
+      toast.success(t("serviceBooked"));
       onDone();
     },
     onError: (error: unknown) =>
-      toast.error(error instanceof Error ? error.message : "Could not book that slot."),
+      toast.error(error instanceof Error ? error.message : t("serviceBookFailed")),
   });
 
   return (
-    <Card icon={<Wrench className="h-5 w-5 text-primary" />} title="Book a service slot">
+    <Card icon={<Wrench className="h-5 w-5 text-primary" />} title={t("bookServiceTitle")}>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="service-date">Date</Label>
+          <Label htmlFor="service-date">{t("dateLabel")}</Label>
           <Input
             id="service-date"
             type="date"
@@ -427,7 +429,7 @@ function ServiceBooking({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="service-slot">Slot</Label>
+          <Label htmlFor="service-slot">{t("slotLabel")}</Label>
           <select
             id="service-slot"
             value={slot}
@@ -447,7 +449,7 @@ function ServiceBooking({
         disabled={!date || !hubId || book.isPending}
       >
         {book.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Book slot
+        {t("bookSlot")}
       </Button>
     </Card>
   );
