@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/drivex/AppShell";
+import { PageLoader } from "@/components/drivex/PageLoader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -78,13 +79,7 @@ function MyBikePage() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["my-bike"] });
 
   if (session.loading || bike.isLoading) {
-    return (
-      <AppShell subtitle={t("myBikeSubtitle")}>
-        <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loadingBike")}
-        </div>
-      </AppShell>
-    );
+    return <PageLoader message={t("loadingBike")} />;
   }
 
   const data = bike.data;

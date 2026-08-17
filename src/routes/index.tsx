@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Loader2, MapPin, Navigation, Clock, Sparkles, ChevronRight } from "lucide-react";
+import { MapPin, Navigation, Clock, Sparkles, ChevronRight } from "lucide-react";
 
 import { AppShell } from "@/components/drivex/AppShell";
+import { PageLoader } from "@/components/drivex/PageLoader";
 import { PlanCard } from "@/components/drivex/PlanCard";
 import { BikeCard } from "@/components/drivex/BikeCard";
 import { BikeDeck } from "@/components/drivex/BikeDeck";
@@ -173,13 +174,7 @@ function Discovery() {
   }
 
   if (catalog.isLoading) {
-    return (
-      <AppShell>
-        <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("findingBikes")}
-        </div>
-      </AppShell>
-    );
+    return <PageLoader message={t("findingBikes")} />;
   }
 
   const mapsUrl = hub

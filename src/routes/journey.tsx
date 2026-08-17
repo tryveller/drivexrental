@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/drivex/AppShell";
+import { PageLoader } from "@/components/drivex/PageLoader";
 import { CaptureField } from "@/components/drivex/CaptureField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,14 +165,7 @@ function JourneyPage() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["journey"] });
 
   if (session.loading || journey.isLoading || catalog.isLoading || creating) {
-    return (
-      <AppShell subtitle={t("subtitleBooking")}>
-        <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
-          {creating ? t("preparingBooking") : t("loadingBooking")}
-        </div>
-      </AppShell>
-    );
+    return <PageLoader message={creating ? t("preparingBooking") : t("loadingBooking")} />;
   }
 
   const booking = journey.data?.booking ?? null;

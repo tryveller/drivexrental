@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { ClipboardList, History, Loader2, MessageSquare, Star, Wrench } from "lucide-react";
+import { ClipboardList, History, MessageSquare, Star, Wrench } from "lucide-react";
 
 import { AppShell } from "@/components/drivex/AppShell";
+import { PageLoader } from "@/components/drivex/PageLoader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRiderSession } from "@/hooks/useRiderSession";
@@ -76,13 +77,7 @@ function AccountPage() {
   });
 
   if (session.loading || overview.isLoading) {
-    return (
-      <AppShell subtitle={t("accountTitle")}>
-        <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("loadingBooking")}
-        </div>
-      </AppShell>
-    );
+    return <PageLoader message={t("loadingBooking")} />;
   }
 
   const data = overview.data;
