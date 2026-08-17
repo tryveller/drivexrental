@@ -17,7 +17,8 @@ export const unlockPrototype = createServerFn({ method: "POST" })
   .inputValidator((input: { pin: string }) => input)
   .handler(async ({ data }) => {
     const access = await import("./access.server");
-    if (!access.gateEnabled()) return { token: null, enabled: false };
+    if (!access.gateEnabled())
+      return { ok: true as const, enabled: false, token: null, message: null };
     const { getRequestHeader } = await import("@tanstack/react-start/server");
     const clientKey =
       getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? "unknown";
