@@ -8,6 +8,8 @@ import { PlanCard } from "@/components/drivex/PlanCard";
 import { BikeCard } from "@/components/drivex/BikeCard";
 import { BikeDeck } from "@/components/drivex/BikeDeck";
 import { DatesStep, defaultDates, type RideDates } from "@/components/drivex/DatesStep";
+import { PhoneLoginDialog } from "@/components/drivex/PhoneLoginDialog";
+import { ResumeCard, isRiding } from "@/components/drivex/ResumeCard";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +20,8 @@ import {
 } from "@/components/ui/dialog";
 import { modelTitle, rupees } from "@/lib/format";
 import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
+import { getAccountOverview } from "@/lib/account.functions";
+import { useRiderSession } from "@/hooks/useRiderSession";
 import { computeConditionScore, computeDuration, distanceKm, planDayRate } from "@/lib/pricing";
 import { bestInClass } from "@/lib/bike-specs";
 import { useLanguage } from "@/lib/i18n";
@@ -48,6 +52,21 @@ function Discovery() {
   const { t } = useLanguage();
   const { location, clearLocation } = useRiderLocation();
   const catalog = useQuery({ queryKey: ["catalog"], queryFn: () => getCatalog() });
+  const session = useRiderSession();
+  const [loginOpen, setLoginOpen] = useState(false);
+
+  // Signed-in riders (including someone who just entered their number to pull a
+  // hub-side reservation) see their live booking at the top of the homepage.
+  const account = useQuery({
+    queryKey: ["account-overview", session.userId],
+    queryFn: () => getAccountOverview(),
+    enabled: Boolean(session.userId),
+  });
+  const activeBooking = account.data?.current?.[0] ?? null;
+
+  function openJourney(status: string) {
+    navigate({ to: isRiding(status) ? "/my-bike" : "/journey" });
+  }
 
   const [modelId, setModelId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
@@ -169,6 +188,15 @@ function Discovery() {
 
   return (
     <AppShell>
+      {activeBooking ? (
+        <section className="mb-4">
+          <ResumeCard
+            booking={activeBooking}
+            onOpen={() => openJourney(activeBooking.status)}
+          />
+        </section>
+      ) : null}
+
       <section className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">{t("compareHint")}</h1>
         <button
