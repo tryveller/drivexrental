@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bike, ClipboardList, History, LogOut, Menu, MessageSquare, Star, User } from "lucide-react";
+import { Bike, ClipboardList, History, LogOut, Menu, MessageSquare, Star, ShieldCheck, User } from "lucide-react";
 import { toast } from "sonner";
 
 import {
