@@ -135,6 +135,52 @@ export function isSlotKey(value: unknown): value is SlotKey {
   return SLOTS.some((row) => row.key === value);
 }
 
+
+// ---------------------------------------------------------------------------
+// Calendar helpers. Every date in the product is a local calendar date
+// (YYYY-MM-DD). `toISOString()` shifts by the timezone offset, so it must
+// never be used to derive a calendar date — use these instead.
+// ---------------------------------------------------------------------------
+
+export function isoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export function todayIso(): string {
+  return isoDate(new Date());
+}
+
+export function addDaysIso(iso: string, days: number): string {
+  const date = new Date(`${iso}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return isoDate(date);
+}
+
+/** Whole days between two calendar dates (b - a). */
+export function daysBetweenIso(a: string, b: string): number {
+  const start = new Date(`${a}T00:00:00`).getTime();
+  const end = new Date(`${b}T00:00:00`).getTime();
+  return Math.round((end - start) / 86_400_000);
+}
+
+/**
+ * Length of one billing period in days for a plan. This is the single source of
+ * truth for rent cycles, km-allowance resets and next-payment dates.
+ */
+export function planPeriodDays(plan: Pick<PlanConfig, "plan_type">): number {
+  if (plan.plan_type === "WEEKLY") return 7;
+  if (plan.plan_type === "MONTHLY" || plan.plan_type === "RTO") return 30;
+  return 1;
+}
+
+/** Next billing date for a plan, counted from a calendar date. */
+export function nextPeriodDate(plan: Pick<PlanConfig, "plan_type">, fromIso: string): string {
+  return addDaysIso(fromIso, planPeriodDays(plan));
+}
+
 /** Day rate implied by the plan: weekly ÷ 7, monthly ÷ 30, daily as-is. */
 export function planDayRate(plan: Pick<PlanConfig, "plan_type" | "rental_amount">): number {
   if (plan.plan_type === "WEEKLY") return plan.rental_amount / 7;
@@ -278,6 +324,57 @@ export function buildQuote(
     depositAmount,
     chargesTotal: totalInitialLiability - depositAmount,
   };
+}
+
+
+// ---------------------------------------------------------------------------
+// Settlement. One formula for the refund, used by the return preview, the
+// closing settlement row and every screen that shows an estimate.
+// ---------------------------------------------------------------------------
+
+export type SettlementInput = {
+  depositAmount: number;
+  outstandingRent?: number;
+  challanAmount?: number;
+  kmOverageAmount?: number;
+  damageAmount?: number;
+};
+
+export type SettlementResult = {
+  depositAmount: number;
+  outstandingRent: number;
+  challanAmount: number;
+  kmOverageAmount: number;
+  damageAmount: number;
+  deductions: number;
+  refundAmount: number;
+};
+
+export function computeSettlement(input: SettlementInput): SettlementResult {
+  const outstandingRent = input.outstandingRent ?? 0;
+  const challanAmount = input.challanAmount ?? 0;
+  const kmOverageAmount = input.kmOverageAmount ?? 0;
+  const damageAmount = input.damageAmount ?? 0;
+  const deductions = outstandingRent + challanAmount + kmOverageAmount + damageAmount;
+  return {
+    depositAmount: input.depositAmount,
+    outstandingRent,
+    challanAmount,
+    kmOverageAmount,
+    damageAmount,
+    deductions,
+    refundAmount: Math.max(0, input.depositAmount - deductions),
+  };
+}
+
+/**
+ * Quote for the shortest booking a plan allows. Plan cards use this so the
+ * headline total and per-day figure are produced by the same engine that bills
+ * the rider on the dates screen — never by a separate division.
+ */
+export function minDurationQuote(plan: PlanConfig): Quote {
+  const days = minDurationDays(plan);
+  return buildQuote(plan, { days, extraHours: 0, totalHours: days * 24 });
 }
 
 /** How late a return may be before the configurable late-return fee applies. */
