@@ -18,6 +18,16 @@ export function AccessGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     const token = window.localStorage.getItem(STORAGE_KEY) ?? undefined;
+
+    // A previously unlocked device goes straight in; the check below still runs
+    // and re-locks if the token turned out to be stale.
+    if (token) setState("open");
+
+    // Never leave the spinner running forever if the request hangs.
+    const timer = window.setTimeout(() => {
+      if (active) setState((prev) => (prev === "checking" ? "locked" : prev));
+    }, 6000);
+
     checkGateToken({ data: { token } })
       .then((result) => {
         if (!active) return;
@@ -29,10 +39,13 @@ export function AccessGate({ children }: { children: ReactNode }) {
         setState("locked");
       })
       .catch(() => {
-        if (active) setState("locked");
-      });
+        if (active && !token) setState("locked");
+      })
+      .finally(() => window.clearTimeout(timer));
+
     return () => {
       active = false;
+      window.clearTimeout(timer);
     };
   }, []);
 
