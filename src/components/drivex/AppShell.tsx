@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { Languages, LifeBuoy } from "lucide-react";
+import { Languages, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
-import { DRIVEX_SUPPORT_PHONE } from "@/lib/format";
+import { DRIVEX_WHATSAPP } from "@/lib/format";
 import { AutoBackdrop } from "@/components/drivex/AutoBackdrop";
 import { AccountMenu } from "@/components/drivex/AccountMenu";
 import { DriveXLogo } from "@/components/drivex/DriveXLogo";
@@ -70,10 +70,12 @@ export function AppShell({
           <div className="flex items-center gap-2">
             <LanguagePicker />
             <a
-              href={`tel:${DRIVEX_SUPPORT_PHONE}`}
+              href={`https://wa.me/${DRIVEX_WHATSAPP}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur transition-colors hover:bg-secondary"
             >
-              <LifeBuoy className="h-3.5 w-3.5" />
+              <MessageCircle className="h-3.5 w-3.5" />
               {t("help")}
             </a>
             <AccountMenu />
