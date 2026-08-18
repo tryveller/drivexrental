@@ -377,6 +377,9 @@ export function minDurationQuote(plan: PlanConfig): Quote {
   return buildQuote(plan, { days, extraHours: 0, totalHours: days * 24 });
 }
 
+/** Reservation amount used only when a plan row is missing one. */
+export const RESERVATION_FALLBACK = 199;
+
 /** How late a return may be before the configurable late-return fee applies. */
 export const LATE_RETURN_FEE_FALLBACK = 50;
 

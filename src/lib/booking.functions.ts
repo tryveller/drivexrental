@@ -353,7 +353,8 @@ export const payReservation = createServerFn({ method: "POST" })
       .select("reservation_amount")
       .eq("id", booking.plan_id)
       .single();
-    const amount = plan?.reservation_amount ?? 199;
+    const { RESERVATION_FALLBACK } = await import("./pricing");
+    const amount = plan?.reservation_amount ?? RESERVATION_FALLBACK;
 
     const { data: alreadyPaid } = await supabaseAdmin
       .from("payments")
@@ -412,7 +413,7 @@ export const payReservation = createServerFn({ method: "POST" })
       payment_id: payment.id,
       entry_type: "RESERVATION",
       amount,
-      note: "₹199 reservation — adjusted against the amount due at the hub",
+      note: `₹${amount} reservation — adjusted against the amount due at the hub`,
     });
 
     await supabaseAdmin.from("vehicles").update({ status: "RESERVED" }).eq("id", vehicleId);
