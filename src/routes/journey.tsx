@@ -1006,6 +1006,14 @@ function PaymentStep({
                   −{rupees(breakdown.data.reservationCredit)}
                 </dd>
               </div>
+              {breakdown.data.walletCredit > 0 && (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground">{t("walletApplied")}</dt>
+                  <dd className="font-medium text-primary">
+                    −{rupees(breakdown.data.walletCredit)}
+                  </dd>
+                </div>
+              )}
               <div className="flex justify-between gap-4 border-t border-border pt-2 text-base">
                 <dt className="font-semibold">{t("amountDueNow")}</dt>
                 <dd className="font-semibold">{rupees(breakdown.data.amountDue)}</dd>
