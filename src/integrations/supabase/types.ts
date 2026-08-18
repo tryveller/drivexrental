@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      addon_pricing: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label_key: string
+          unit: string
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label_key: string
+          unit: string
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label_key?: string
+          unit?: string
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           booking_id: string | null
@@ -52,6 +82,8 @@ export type Database = {
           customer_id: string
           dropoff_on: string | null
           dropoff_slot: string | null
+          extra_helmet_amount: number
+          extra_helmet_mode: string
           handover_confirmed_at: string | null
           hub_id: string
           id: string
@@ -81,6 +113,8 @@ export type Database = {
           customer_id: string
           dropoff_on?: string | null
           dropoff_slot?: string | null
+          extra_helmet_amount?: number
+          extra_helmet_mode?: string
           handover_confirmed_at?: string | null
           hub_id: string
           id?: string
@@ -110,6 +144,8 @@ export type Database = {
           customer_id?: string
           dropoff_on?: string | null
           dropoff_slot?: string | null
+          extra_helmet_amount?: number
+          extra_helmet_mode?: string
           handover_confirmed_at?: string | null
           hub_id?: string
           id?: string
