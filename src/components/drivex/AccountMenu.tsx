@@ -33,7 +33,7 @@ export function AccountMenu() {
     navigate({ to: "/", replace: true });
   }
 
-  const go = (to: "/journey" | "/my-bike" | "/account", hash?: string) =>
+  const go = (to: "/journey" | "/my-bike" | "/account" | "/eligibility", hash?: string) =>
     navigate(hash ? { to, hash } : { to });
 
   return (
