@@ -22,6 +22,19 @@ export function bikeImage(name: string): string {
   return IMAGES.find((image) => key.includes(image.match))?.src ?? jupiter;
 }
 
+const THEMES: { match: string; className: string }[] = [
+  { match: "radeon", className: "bike-theme-ember" },
+  { match: "sport", className: "bike-theme-amber" },
+  { match: "jupiter", className: "bike-theme-gold" },
+  { match: "orbiter", className: "bike-theme-copper" },
+];
+
+/** Each model gets its own orange shade so swiping feels like a change. */
+export function bikeTheme(name: string): string {
+  const key = name.toLowerCase();
+  return THEMES.find((theme) => key.includes(theme.match))?.className ?? "bike-theme-amber";
+}
+
 export function BikeCard({
   model,
   vehicle,
@@ -83,20 +96,24 @@ export function BikeCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "group overflow-hidden rounded-3xl border text-left transition-all",
-        selected
-          ? "border-primary bg-primary/10 ring-1 ring-primary"
-          : "border-border bg-card/70 backdrop-blur hover:border-primary/50",
+        "group flex h-full w-full flex-col overflow-hidden rounded-3xl border bg-card/80 text-left backdrop-blur transition-all",
+        "bike-theme",
+        bikeTheme(model.name),
+        selected ? "border-primary ring-1 ring-primary" : "border-primary/25 hover:border-primary/60",
       )}
+      style={{
+        backgroundImage:
+          "linear-gradient(160deg, var(--bike-wash), transparent 55%, var(--bike-wash))",
+      }}
     >
-      <div className="relative">
+      <div className="relative shrink-0">
         <img
           src={bikeImage(model.name)}
           alt={modelTitle(model.brand, model.name)}
           width={1024}
           height={768}
           loading="lazy"
-          className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">
@@ -158,7 +175,7 @@ export function BikeCard({
         </div>
       )}
 
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border/70 px-3 py-3">
+      <dl className="mt-auto grid grid-cols-2 gap-x-3 gap-y-2 border-t border-primary/20 px-3 py-3">
         {specs.map((row) => (
           <div key={row.label} className="min-w-0">
             <dt className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -170,7 +187,7 @@ export function BikeCard({
         ))}
       </dl>
 
-      <div className="flex items-center justify-between gap-2 border-t border-border/70 px-3 py-2 text-[10px] text-muted-foreground">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-t border-primary/20 px-3 py-2 text-[10px] text-muted-foreground">
         <span className="truncate font-medium text-foreground/80">{t(spec.bestForKey as never)}</span>
         {unitsReady ? <span className="shrink-0">{t("unitsReady", { count: unitsReady })}</span> : null}
       </div>
