@@ -55,7 +55,7 @@ export function BikeDeck({
   return (
     <div>
       {/* Fixed height keeps the arrows and dots anchored while cards change. */}
-      <div className="relative h-[27rem] select-none sm:h-[29rem]" style={{ touchAction: "pan-y" }}>
+      <div className="relative h-[28.5rem] select-none sm:h-[30rem]" style={{ touchAction: "pan-y" }}>
         {stack
           .slice()
           .reverse()
