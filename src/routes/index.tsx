@@ -23,7 +23,14 @@ import { modelTitle, rupees } from "@/lib/format";
 import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
 import { getAccountOverview } from "@/lib/account.functions";
 import { useRiderSession } from "@/hooks/useRiderSession";
-import { computeConditionScore, computeDuration, distanceKm, planDayRate } from "@/lib/pricing";
+import {
+  addonRates,
+  computeConditionScore,
+  computeDuration,
+  distanceKm,
+  planDayRate,
+  type HelmetMode,
+} from "@/lib/pricing";
 import { bestInClass } from "@/lib/bike-specs";
 import { useLanguage } from "@/lib/i18n";
 import { LOCALITY_COORDS, PIN_COORDS, useRiderLocation } from "@/lib/location";
@@ -75,6 +82,7 @@ function Discovery() {
   const [showRto, setShowRto] = useState(false);
   const [dates, setDates] = useState<RideDates>(() => defaultDates());
   const [helmet, setHelmet] = useState<HelmetMode>("NONE");
+  const rates = useMemo(() => addonRates(catalog.data?.addons), [catalog.data]);
 
   // Fall back to the locality/PIN centre so distance still shows when the rider
   // picked their area manually instead of sharing GPS.
