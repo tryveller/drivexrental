@@ -165,10 +165,18 @@ export const getJourney = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (!booking) {
-      return { booking: null, kyc: null, payments: [], rental: null, customer, profile: null };
+      return {
+        booking: null,
+        kyc: null,
+        payments: [],
+        rental: null,
+        customer,
+        vehicle: null,
+        profile: null,
+      };
     }
 
-    const [kyc, payments, rental] = await Promise.all([
+    const [kyc, payments, rental, vehicle] = await Promise.all([
       supabase.from("kyc_cases").select("*").eq("booking_id", booking.id).maybeSingle(),
       supabase
         .from("payments")
@@ -176,6 +184,13 @@ export const getJourney = createServerFn({ method: "GET" })
         .eq("customer_id", userId)
         .order("created_at", { ascending: false }),
       supabase.from("rentals").select("id, status").eq("booking_id", booking.id).maybeSingle(),
+      booking.vehicle_id
+        ? supabase
+            .from("vehicles")
+            .select("id, registration_number, odometer_km, fuel_percent, condition")
+            .eq("id", booking.vehicle_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     // The saved rider profile decides whether KYC has to be done again.
@@ -188,6 +203,7 @@ export const getJourney = createServerFn({ method: "GET" })
       payments: payments.data ?? [],
       rental: rental.data,
       customer,
+      vehicle: vehicle.data,
       profile: savedProfile
         ? {
             kycStatus: savedProfile.kyc_status as string,
