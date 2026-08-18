@@ -346,6 +346,8 @@ export type Database = {
       }
       eligibility_checks: {
         Row: {
+          aadhaar_back_path: string | null
+          aadhaar_front_path: string | null
           booking_id: string | null
           consent_at: string | null
           consent_text: string | null
@@ -355,10 +357,14 @@ export type Database = {
           dl_back_path: string | null
           dl_front_path: string | null
           id: string
+          method: string
+          pan_path: string | null
           result: string
           selfie_path: string | null
         }
         Insert: {
+          aadhaar_back_path?: string | null
+          aadhaar_front_path?: string | null
           booking_id?: string | null
           consent_at?: string | null
           consent_text?: string | null
@@ -368,10 +374,14 @@ export type Database = {
           dl_back_path?: string | null
           dl_front_path?: string | null
           id?: string
+          method?: string
+          pan_path?: string | null
           result: string
           selfie_path?: string | null
         }
         Update: {
+          aadhaar_back_path?: string | null
+          aadhaar_front_path?: string | null
           booking_id?: string | null
           consent_at?: string | null
           consent_text?: string | null
@@ -381,6 +391,8 @@ export type Database = {
           dl_back_path?: string | null
           dl_front_path?: string | null
           id?: string
+          method?: string
+          pan_path?: string | null
           result?: string
           selfie_path?: string | null
         }
@@ -511,6 +523,8 @@ export type Database = {
       }
       kyc_cases: {
         Row: {
+          aadhaar_back_path: string | null
+          aadhaar_front_path: string | null
           action_required_reason: string | null
           address_proof_path: string | null
           address_proof_status: string
@@ -539,8 +553,11 @@ export type Database = {
           selfie_path: string | null
           status: Database["public"]["Enums"]["kyc_status"]
           updated_at: string
+          verification_method: string
         }
         Insert: {
+          aadhaar_back_path?: string | null
+          aadhaar_front_path?: string | null
           action_required_reason?: string | null
           address_proof_path?: string | null
           address_proof_status?: string
@@ -569,8 +586,11 @@ export type Database = {
           selfie_path?: string | null
           status?: Database["public"]["Enums"]["kyc_status"]
           updated_at?: string
+          verification_method?: string
         }
         Update: {
+          aadhaar_back_path?: string | null
+          aadhaar_front_path?: string | null
           action_required_reason?: string | null
           address_proof_path?: string | null
           address_proof_status?: string
@@ -599,6 +619,7 @@ export type Database = {
           selfie_path?: string | null
           status?: Database["public"]["Enums"]["kyc_status"]
           updated_at?: string
+          verification_method?: string
         }
         Relationships: [
           {
