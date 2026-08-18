@@ -143,8 +143,9 @@ export const payRent = createServerFn({ method: "POST" })
       note: `${plan.billing_period === "week" ? "Weekly" : "Monthly"} rental payment`,
     });
 
-    const periodDays = plan.plan_type === "WEEKLY" ? 7 : 30;
-    const nextDue = new Date(Date.now() + periodDays * 86_400_000).toISOString().slice(0, 10);
+    const { nextPeriodDate, todayIso } = await import("./pricing");
+    const periodStartedOn = todayIso();
+    const nextDue = nextPeriodDate(plan, periodStartedOn);
 
     const { data: vehicle } = await supabaseAdmin
       .from("vehicles")
@@ -157,7 +158,7 @@ export const payRent = createServerFn({ method: "POST" })
       .update({
         next_payment_due_on: nextDue,
         period_resets_on: nextDue,
-        period_started_on: new Date().toISOString().slice(0, 10),
+        period_started_on: periodStartedOn,
         period_start_odometer: vehicle?.odometer_km ?? rental.period_start_odometer,
         payments_completed: rental.payments_completed + 1,
       })
@@ -292,22 +293,25 @@ export const completeReturn = createServerFn({ method: "POST" })
       ] as never,
     });
 
-    const refund = Math.max(
-      0,
-      plan.deposit_amount - challanTotal - km.overageAmount - damageAmount,
-    );
+    const { computeSettlement } = await import("./pricing");
+    const settlementTotals = computeSettlement({
+      depositAmount: plan.deposit_amount,
+      challanAmount: challanTotal,
+      kmOverageAmount: km.overageAmount,
+      damageAmount,
+    });
 
     const { data: settlement, error } = await supabaseAdmin
       .from("settlements")
       .insert({
         rental_id: rental.id,
         customer_id: context.userId,
-        deposit_amount: plan.deposit_amount,
-        outstanding_rent: 0,
-        challan_amount: challanTotal,
-        km_overage_amount: km.overageAmount,
-        damage_amount: damageAmount,
-        refund_amount: refund,
+        deposit_amount: settlementTotals.depositAmount,
+        outstanding_rent: settlementTotals.outstandingRent,
+        challan_amount: settlementTotals.challanAmount,
+        km_overage_amount: settlementTotals.kmOverageAmount,
+        damage_amount: settlementTotals.damageAmount,
+        refund_amount: settlementTotals.refundAmount,
         status: "REFUND_PENDING",
         damages: [
           { area: "Left side panel", charge: damageAmount, note: "Compared against handover photo" },
@@ -359,15 +363,21 @@ export const getReturnPreview = createServerFn({ method: "GET" })
       extra_km_rate: Number(plan.extra_km_rate),
     });
     const challanTotal = (challans ?? []).reduce((sum, row) => sum + row.amount, 0);
+    const { computeSettlement } = await import("./pricing");
+    const preview = computeSettlement({
+      depositAmount: plan.deposit_amount,
+      challanAmount: challanTotal,
+      kmOverageAmount: km.overageAmount,
+    });
 
     return {
       rental,
-      deposit: plan.deposit_amount,
-      outstandingRent: 0,
-      challans: challanTotal,
-      kmOverage: km.overageAmount,
-      knownPending: challanTotal + km.overageAmount,
-      potentialRefund: Math.max(0, plan.deposit_amount - challanTotal - km.overageAmount),
+      deposit: preview.depositAmount,
+      outstandingRent: preview.outstandingRent,
+      challans: preview.challanAmount,
+      kmOverage: preview.kmOverageAmount,
+      knownPending: preview.deductions,
+      potentialRefund: preview.refundAmount,
       settlement,
     };
   });

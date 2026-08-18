@@ -289,7 +289,13 @@ function MyBikePage() {
               <Row
                 label={t("estimatedRefund")}
                 value={rupees(
-                  Math.max(0, plan.deposit_amount - dues.challans - dues.kmOverage),
+                  computeSettlement({
+                    depositAmount: plan.deposit_amount,
+                    outstandingRent: dues.lateFee,
+                    challanAmount: dues.challans,
+                    kmOverageAmount: dues.kmOverage,
+                    damageAmount: dues.damage,
+                  }).refundAmount,
                 )}
               />
             </dl>

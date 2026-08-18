@@ -958,8 +958,9 @@ export const confirmHandover = createServerFn({ method: "POST" })
     ]);
     if (!plan || !vehicle) throw new Error("Vehicle or plan missing");
 
-    const periodDays = plan.plan_type === "WEEKLY" ? 7 : 30;
-    const resets = new Date(Date.now() + periodDays * 86_400_000);
+    const { nextPeriodDate, todayIso } = await import("./pricing");
+    const startedOn = todayIso();
+    const resetsOn = nextPeriodDate(plan, startedOn);
 
     const { data: rental, error } = await supabaseAdmin
       .from("rentals")
@@ -969,9 +970,10 @@ export const confirmHandover = createServerFn({ method: "POST" })
         vehicle_id: vehicle.id,
         plan_id: plan.id,
         period_start_odometer: vehicle.odometer_km,
-        period_resets_on: resets.toISOString().slice(0, 10),
+        period_started_on: startedOn,
+        period_resets_on: resetsOn,
         next_payment_amount: plan.rental_amount,
-        next_payment_due_on: resets.toISOString().slice(0, 10),
+        next_payment_due_on: resetsOn,
         return_hub_id: booking.hub_id,
         payments_completed: 1,
       })
