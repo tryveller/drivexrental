@@ -37,12 +37,13 @@ export const verifyOtp = createServerFn({ method: "POST" })
       .from("otp_requests")
       .select("id, code, expires_at, consumed_at")
       .eq("phone", phone)
+      .eq("code", code)
       .is("consumed_at", null)
       .order("created_at", { ascending: false })
       .limit(1);
 
     const otp = rows?.[0];
-    if (!otp || otp.code !== code) throw new Error("That code is incorrect. Please try again.");
+    if (!otp) throw new Error("That code is incorrect. Please try again.");
     if (new Date(otp.expires_at).getTime() < Date.now())
       throw new Error("That code has expired. Send a new one.");
 
