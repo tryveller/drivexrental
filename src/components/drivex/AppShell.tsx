@@ -74,10 +74,11 @@ export function AppShell({
               href={`https://wa.me/${DRIVEX_WHATSAPP}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur transition-colors hover:bg-secondary"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground backdrop-blur transition-colors hover:bg-secondary"
+              aria-label={t("help")}
             >
-              <MessageCircle className="h-3.5 w-3.5" />
-              {t("help")}
+              <WhatsAppIcon className="h-4 w-4 text-whatsapp" />
+              <span>{t("help")}</span>
             </a>
             <AccountMenu />
           </div>
