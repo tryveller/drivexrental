@@ -179,23 +179,6 @@ export const getJourney = createServerFn({ method: "GET" })
     };
   });
 
-export const submitEligibility = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: {
-      bookingId: string;
-      selfieCaptured: boolean;
-      selfiePath?: string | null;
-      dlFrontPath?: string | null;
-      dlBackPath?: string | null;
-      consent: boolean;
-      method: "DIGITAL" | "UPLOAD";
-    }) => input,
-  )
-  .handler(async ({ data, context }) => {
-    return submitEligibilityImpl(data, context);
-  });
-
 const HELMET_EDITABLE_STATUSES = [
   "OTP_VERIFIED",
   "ELIGIBILITY_STARTED",
