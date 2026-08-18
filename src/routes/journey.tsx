@@ -44,6 +44,7 @@ import {
   addonRates,
   buildQuote,
   computeDuration,
+  isHelmetMode,
   slotLabelKey,
   type AddonRates,
   type HelmetMode,

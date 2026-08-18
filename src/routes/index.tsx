@@ -27,6 +27,7 @@ import {
   addonRates,
   computeConditionScore,
   computeDuration,
+  meetsMinDuration,
   distanceKm,
   planDayRate,
   type HelmetMode,
