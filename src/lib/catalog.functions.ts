@@ -64,11 +64,18 @@ export type CatalogVehicle = {
   last_service_odometer: number;
 };
 
+export type CatalogAddon = {
+  code: string;
+  label_key: string;
+  amount: number;
+  unit: string;
+};
+
 export const getCatalog = createServerFn({ method: "GET" }).handler(async () => {
   const { publicClient } = await import("./drivex.server");
   const supabase = publicClient();
 
-  const [hubs, models, plans, vehicles] = await Promise.all([
+  const [hubs, models, plans, vehicles, addons] = await Promise.all([
     supabase
       .from("hubs")
       .select("id, name, locality, address, latitude, longitude, opens_at, closes_at, phone")
@@ -89,6 +96,10 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
       .select(
         "id, hub_id, model_id, condition, status, odometer_km, last_service_date, last_service_odometer",
       ),
+    supabase
+      .from("addon_pricing")
+      .select("code, label_key, amount, unit")
+      .eq("is_active", true),
   ]);
 
   const inventory: CatalogInventory[] = [];
@@ -126,5 +137,6 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
       extra_km_rate: Number((plan as CatalogPlan).extra_km_rate),
     })) as CatalogPlan[],
     inventory,
+    addons: (addons.data ?? []) as CatalogAddon[],
   };
 });
