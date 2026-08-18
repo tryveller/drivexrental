@@ -391,6 +391,27 @@ export function lateReturnFee(plan: Pick<PlanConfig, "late_return_fee">): number
 export const MAX_PICKUP_CHANGES = 1;
 export const MAX_PICKUP_SHIFT_DAYS = 3;
 
+/** A paid reservation holds the bike for this long. */
+export const RESERVATION_HOLD_HOURS = 72;
+/** Grace period after the chosen pick-up slot before the hold lapses. */
+export const PICKUP_GRACE_HOURS = 24;
+
+/**
+ * Single rule for how long a reserved bike is held: 72 hours from payment, and
+ * never less than a day past the chosen pick-up slot.
+ */
+export function reservationHoldUntil(
+  paidAt: Date,
+  pickupOn?: string | null,
+  pickupSlot?: string | null,
+): Date {
+  const fromPayment = new Date(paidAt.getTime() + RESERVATION_HOLD_HOURS * 3_600_000);
+  if (!pickupOn) return fromPayment;
+  const fromPickup = new Date(`${pickupOn}T00:00:00`);
+  fromPickup.setHours(slotStartHour(pickupSlot) + PICKUP_GRACE_HOURS);
+  return fromPickup.getTime() > fromPayment.getTime() ? fromPickup : fromPayment;
+}
+
 export const OTHER_POSSIBLE_CHARGE_KEYS = [
   "chargeExtraKm",
   "chargeLateFee",
