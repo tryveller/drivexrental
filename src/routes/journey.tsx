@@ -499,7 +499,7 @@ function ActionButton<T>({
       variant={variant}
       className="w-full sm:w-auto"
       onClick={() => mutation.mutate()}
-      disabled={mutation.isPending}
+      disabled={mutation.isPending || disabled}
     >
       {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {label}

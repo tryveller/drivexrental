@@ -30,6 +30,7 @@ export const ALLOWED_EVENTS = [
   "eligibility_started",
   "eligibility_skipped",
   "eligibility_completed",
+  "eligibility_self_check",
   "reservation_started",
   "reservation_paid",
   "rapido_selected",
