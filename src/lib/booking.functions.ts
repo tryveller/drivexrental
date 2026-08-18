@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const BOOKING_SELECT =
-  "id, booking_code, status, hub_id, model_id, plan_id, vehicle_id, reservation_expires_at, travel_mode, rapido_coupon, checked_in_at, agreement_accepted_at, handover_confirmed_at, rejection_reason, created_at, pickup_on, pickup_slot, dropoff_on, dropoff_slot, billed_days, billed_extra_hours, quoted_total, pickup_change_count, original_pickup_on";
+  "id, booking_code, status, hub_id, model_id, plan_id, vehicle_id, reservation_expires_at, travel_mode, rapido_coupon, checked_in_at, agreement_accepted_at, handover_confirmed_at, rejection_reason, created_at, pickup_on, pickup_slot, dropoff_on, dropoff_slot, billed_days, billed_extra_hours, quoted_total, pickup_change_count, original_pickup_on, extra_helmet_mode, extra_helmet_amount";
 
 const LOCKED_STATUSES = [
   "RESERVED",
@@ -29,16 +29,19 @@ export const createBooking = createServerFn({ method: "POST" })
       pickupSlot?: string;
       dropoffOn?: string;
       dropoffSlot?: string;
+      extraHelmet?: string;
     }) => input,
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
-    const { buildQuote, computeDuration, isSlotKey } = await import("./pricing");
+    const { addonRates, buildQuote, computeDuration, isHelmetMode, isSlotKey } =
+      await import("./pricing");
 
     // The server owns the quote: dates come from the rider, amounts never do.
     const pickupSlot = isSlotKey(data.pickupSlot) ? data.pickupSlot : "MORNING";
     const dropoffSlot = isSlotKey(data.dropoffSlot) ? data.dropoffSlot : "EVENING";
+    const helmetMode = isHelmetMode(data.extraHelmet) ? data.extraHelmet : "NONE";
     const duration = computeDuration(
       data.pickupOn ?? null,
       pickupSlot,
@@ -46,17 +49,23 @@ export const createBooking = createServerFn({ method: "POST" })
       dropoffSlot,
     );
 
-    let dateFields: Record<string, unknown> = {};
+    // Helmet rates and plan amounts both come from the database.
+    const [{ data: plan }, { data: addonRows }] = await Promise.all([
+      supabaseAdmin.from("plans").select("*").eq("id", data.planId).single(),
+      supabaseAdmin.from("addon_pricing").select("code, amount").eq("is_active", true),
+    ]);
+    const helmet = { mode: helmetMode, rates: addonRates(addonRows) };
+    const quote = plan
+      ? buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, helmet)
+      : null;
+
+    let dateFields: Record<string, unknown> = {
+      extra_helmet_mode: helmetMode,
+      extra_helmet_amount: quote?.helmetAmount ?? 0,
+    };
     if (duration && data.pickupOn && data.dropoffOn) {
-      const { data: plan } = await supabaseAdmin
-        .from("plans")
-        .select("*")
-        .eq("id", data.planId)
-        .single();
-      const quote = plan
-        ? buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration)
-        : null;
       dateFields = {
+        ...dateFields,
         pickup_on: data.pickupOn,
         pickup_slot: pickupSlot,
         dropoff_on: data.dropoffOn,
