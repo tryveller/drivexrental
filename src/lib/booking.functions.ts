@@ -250,6 +250,9 @@ export const setExtraHelmet = createServerFn({ method: "POST" })
     return { mode, amount: quote.helmetAmount, total: quote.totalInitialLiability };
   });
 
+const CONSENT_TEXT =
+  "I authorise DriveX to perform identity, document and rental eligibility checks required to process my rental request, and I consent to the use and sharing of my information with authorized third parties and credit bureaus for credit assessment and verification.";
+
 export const submitEligibility = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -285,9 +288,8 @@ export const submitEligibility = createServerFn({ method: "POST" })
         dl_front_path: data.dlFrontPath ?? null,
         dl_back_path: data.dlBackPath ?? null,
         eligibility_result: result,
-        consent_version: "v1.0",
-        consent_text:
-          "I authorise DriveX to perform identity, document and rental eligibility checks required to process my rental request.",
+        consent_version: "v2.0",
+        consent_text: CONSENT_TEXT,
         consent_at: new Date().toISOString(),
         consent_device: "rider-app",
       },
@@ -550,9 +552,11 @@ export const submitHubKyc = createServerFn({ method: "POST" })
       dlBackPath?: string | null;
       addressProofPath?: string | null;
       panPath?: string | null;
+      consent?: boolean;
     }) => input,
   )
   .handler(async ({ data, context }) => {
+    if (!data.consent) throw new Error("We need your consent to verify these documents.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
     const { persistDocuments } = await import("./documents.server");
@@ -588,6 +592,10 @@ export const submitHubKyc = createServerFn({ method: "POST" })
         dl_back_path: data.dlBackPath ?? null,
         address_proof_path: data.addressProofPath ?? null,
         pan_path: data.panPath ?? null,
+        consent_version: "v2.0",
+        consent_text: CONSENT_TEXT,
+        consent_at: new Date().toISOString(),
+        consent_device: "rider-app",
         address_proof_type: "UPLOAD",
         address_proof_status: "VERIFIED",
         action_required_reason: null,
