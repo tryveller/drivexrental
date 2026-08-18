@@ -16,6 +16,14 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/drivex/AppShell";
 import { PageLoader } from "@/components/drivex/PageLoader";
 import { CaptureField } from "@/components/drivex/CaptureField";
+import {
+  EMPTY_ID_DOCS,
+  IdDocumentFields,
+  IdMethodPicker,
+  PendingConfirmation,
+  type IdDocState,
+} from "@/components/drivex/IdDocuments";
+import { eligibilityDocsComplete, type EligibilityMethod } from "@/lib/eligibility";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
