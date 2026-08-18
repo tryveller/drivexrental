@@ -54,7 +54,8 @@ export function BikeDeck({
 
   return (
     <div>
-      <div className="relative select-none" style={{ touchAction: "pan-y" }}>
+      {/* Fixed height keeps the arrows and dots anchored while cards change. */}
+      <div className="relative h-[27rem] select-none sm:h-[29rem]" style={{ touchAction: "pan-y" }}>
         {stack
           .slice()
           .reverse()
@@ -65,8 +66,8 @@ export function BikeDeck({
               <div
                 key={items[cardIndex]?.key ?? cardIndex}
                 className={cn(
-                  "transition-transform duration-300 ease-out",
-                  isTop ? "relative z-30" : "absolute inset-x-0 top-0",
+                  "absolute inset-0 transition-transform duration-300 ease-out",
+                  isTop && "z-30",
                   offset === 1 && "z-20",
                   offset === 2 && "z-10",
                 )}
