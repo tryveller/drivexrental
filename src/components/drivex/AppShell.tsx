@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { Languages, MessageCircle } from "lucide-react";
+import { Languages } from "lucide-react";
 import { toast } from "sonner";
 import { DRIVEX_WHATSAPP } from "@/lib/format";
 import { AutoBackdrop } from "@/components/drivex/AutoBackdrop";
 import { AccountMenu } from "@/components/drivex/AccountMenu";
 import { DriveXLogo } from "@/components/drivex/DriveXLogo";
+import { WhatsAppIcon } from "@/components/drivex/WhatsAppIcon";
 import { LanguageChooser } from "@/components/drivex/LanguageChooser";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { languageMeta, useLanguage } from "@/lib/i18n";
