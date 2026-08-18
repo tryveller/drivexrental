@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bike, ClipboardList, History, LogOut, Menu, MessageSquare, Star, User } from "lucide-react";
+import { Bike, ClipboardList, History, LogOut, Menu, MessageSquare, Star, ShieldCheck, User } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -33,7 +33,7 @@ export function AccountMenu() {
     navigate({ to: "/", replace: true });
   }
 
-  const go = (to: "/journey" | "/my-bike" | "/account", hash?: string) =>
+  const go = (to: "/journey" | "/my-bike" | "/account" | "/eligibility", hash?: string) =>
     navigate(hash ? { to, hash } : { to });
 
   return (
@@ -55,6 +55,9 @@ export function AccountMenu() {
           <span className="block text-sm">{label}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => go("/eligibility")}>
+          <ShieldCheck className="mr-2 h-4 w-4" /> {t("checkEligibilityAnytime")}
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => go("/journey")}>
           <ClipboardList className="mr-2 h-4 w-4" /> {t("currentBookings")}
         </DropdownMenuItem>

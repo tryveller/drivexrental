@@ -140,7 +140,8 @@ export function CaptureField({
   onChange,
   allowFile = true,
 }: {
-  bookingId: string;
+  /** Booking this capture belongs to; omit for a standalone self-check. */
+  bookingId?: string;
   slot: KycSlot;
   label: string;
   hint?: string;
@@ -169,7 +170,7 @@ export function CaptureField({
       return localUrl;
     });
     try {
-      const path = await uploadKycFile(bookingId, slot, blob, fileName);
+      const path = await uploadKycFile(bookingId ?? "self-check", slot, blob, fileName);
       onChange(path);
     } catch (uploadError) {
       onChange(null);

@@ -270,10 +270,9 @@ export const submitEligibility = createServerFn({ method: "POST" })
     const { persistDocuments } = await import("./documents.server");
     const { CONSENT_TEXT, CONSENT_VERSION } = await import("./consent");
 
-    // Riders only upload documents now — the licence is read by the hub team,
-    // never typed in, so eligibility depends on the captures being present.
-    const hasDocs = Boolean(data.dlFrontPath) && Boolean(data.selfiePath);
-    const result = hasDocs ? "LIKELY_ELIGIBLE" : "ADDITIONAL_VERIFICATION";
+    // One scoring rule for booking-time and standalone self-checks.
+    const { evaluateEligibility } = await import("./eligibility");
+    const result = evaluateEligibility(data);
 
     await supabaseAdmin.from("kyc_cases").upsert(
       {
@@ -335,10 +334,16 @@ export const skipEligibility = createServerFn({ method: "POST" })
 
 export const payReservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { bookingId: string; method?: string }) => input)
+  .inputValidator(
+    (input: { bookingId: string; method?: string; acceptedTerms: boolean }) => input,
+  )
   .handler(async ({ data, context }) => {
+    if (!data.acceptedTerms) {
+      throw new Error("Please accept the reservation terms before paying.");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
+    const { RESERVATION_TERMS_TEXT, RESERVATION_TERMS_VERSION } = await import("./consent");
 
     const { data: booking } = await supabaseAdmin
       .from("bookings")
@@ -423,6 +428,9 @@ export const payReservation = createServerFn({ method: "POST" })
       .update({
         status: "RESERVED",
         vehicle_id: vehicleId,
+        reservation_terms_version: RESERVATION_TERMS_VERSION,
+        reservation_terms_text: RESERVATION_TERMS_TEXT,
+        reservation_terms_at: new Date().toISOString(),
         reservation_expires_at: reservationHoldUntil(
           new Date(),
           booking.pickup_on,

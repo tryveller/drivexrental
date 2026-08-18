@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as EligibilityRouteImport } from './routes/eligibility'
 import { Route as JourneyRouteImport } from './routes/journey'
 import { Route as MyBikeRouteImport } from './routes/my-bike'
 
@@ -30,6 +31,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EligibilityRoute = EligibilityRouteImport.update({
+  id: '/eligibility',
+  path: '/eligibility',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JourneyRoute = JourneyRouteImport.update({
   id: '/journey',
   path: '/journey',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/eligibility': typeof EligibilityRoute
   '/journey': typeof JourneyRoute
   '/my-bike': typeof MyBikeRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/eligibility': typeof EligibilityRoute
   '/journey': typeof JourneyRoute
   '/my-bike': typeof MyBikeRoute
 }
@@ -60,21 +68,31 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/eligibility': typeof EligibilityRoute
   '/journey': typeof JourneyRoute
   '/my-bike': typeof MyBikeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/account' | '/auth' | '/journey' | '/my-bike'
+  fullPaths:
+    '/' | '/account' | '/auth' | '/eligibility' | '/journey' | '/my-bike'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/account' | '/auth' | '/journey' | '/my-bike'
-  id: '__root__' | '/' | '/account' | '/auth' | '/journey' | '/my-bike'
+  to: '/' | '/account' | '/auth' | '/eligibility' | '/journey' | '/my-bike'
+  id:
+    | '__root__'
+    | '/'
+    | '/account'
+    | '/auth'
+    | '/eligibility'
+    | '/journey'
+    | '/my-bike'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   AuthRoute: typeof AuthRoute
+  EligibilityRoute: typeof EligibilityRoute
   JourneyRoute: typeof JourneyRoute
   MyBikeRoute: typeof MyBikeRoute
 }
@@ -102,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/eligibility': {
+      id: '/eligibility'
+      path: '/eligibility'
+      fullPath: '/eligibility'
+      preLoaderRoute: typeof EligibilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/journey': {
       id: '/journey'
       path: '/journey'
@@ -123,6 +148,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AuthRoute: AuthRoute,
+  EligibilityRoute: EligibilityRoute,
   JourneyRoute: JourneyRoute,
   MyBikeRoute: MyBikeRoute,
 }
