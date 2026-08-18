@@ -32,6 +32,7 @@ import {
   getJourney,
   payFinalAmount,
   payReservation,
+  setExtraHelmet,
   setTravelMode,
   skipEligibility,
   submitEligibility,
@@ -40,10 +41,16 @@ import {
 import {
   MAX_PICKUP_SHIFT_DAYS,
   OTHER_POSSIBLE_CHARGE_KEYS,
+  addonRates,
   buildQuote,
   computeDuration,
   slotLabelKey,
+  type AddonRates,
+  type HelmetMode,
+  type PlanType,
+  type RideDuration,
 } from "@/lib/pricing";
+import { HelmetPicker } from "@/components/drivex/HelmetPicker";
 import { longDate, modelTitle, rupees } from "@/lib/format";
 import { useLanguage, type TKey } from "@/lib/i18n";
 
