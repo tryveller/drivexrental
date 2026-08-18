@@ -98,6 +98,9 @@ export type Database = {
           rapido_coupon: string | null
           rejection_reason: string | null
           reservation_expires_at: string | null
+          reservation_terms_at: string | null
+          reservation_terms_text: string | null
+          reservation_terms_version: string | null
           status: Database["public"]["Enums"]["booking_status"]
           travel_mode: string | null
           updated_at: string
@@ -129,6 +132,9 @@ export type Database = {
           rapido_coupon?: string | null
           rejection_reason?: string | null
           reservation_expires_at?: string | null
+          reservation_terms_at?: string | null
+          reservation_terms_text?: string | null
+          reservation_terms_version?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           travel_mode?: string | null
           updated_at?: string
@@ -160,6 +166,9 @@ export type Database = {
           rapido_coupon?: string | null
           rejection_reason?: string | null
           reservation_expires_at?: string | null
+          reservation_terms_at?: string | null
+          reservation_terms_text?: string | null
+          reservation_terms_version?: string | null
           status?: Database["public"]["Enums"]["booking_status"]
           travel_mode?: string | null
           updated_at?: string
@@ -312,6 +321,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      eligibility_checks: {
+        Row: {
+          booking_id: string | null
+          consent_at: string | null
+          consent_text: string | null
+          consent_version: string | null
+          created_at: string
+          customer_id: string
+          dl_back_path: string | null
+          dl_front_path: string | null
+          id: string
+          result: string
+          selfie_path: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          consent_at?: string | null
+          consent_text?: string | null
+          consent_version?: string | null
+          created_at?: string
+          customer_id: string
+          dl_back_path?: string | null
+          dl_front_path?: string | null
+          id?: string
+          result: string
+          selfie_path?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          consent_at?: string | null
+          consent_text?: string | null
+          consent_version?: string | null
+          created_at?: string
+          customer_id?: string
+          dl_back_path?: string | null
+          dl_front_path?: string | null
+          id?: string
+          result?: string
+          selfie_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eligibility_checks_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hubs: {
         Row: {
