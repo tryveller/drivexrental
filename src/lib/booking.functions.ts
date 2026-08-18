@@ -590,12 +590,14 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { bookingId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { buildQuote, computeDuration } = await import("./pricing");
+    const { addonRates, buildQuote, computeDuration, isHelmetMode } = await import("./pricing");
     const { supabase } = context;
 
     const { data: booking } = await supabase
       .from("bookings")
-      .select("id, plan_id, pickup_on, pickup_slot, dropoff_on, dropoff_slot")
+      .select(
+        "id, plan_id, pickup_on, pickup_slot, dropoff_on, dropoff_slot, extra_helmet_mode",
+      )
       .eq("id", data.bookingId)
       .single();
     if (!booking) throw new Error("Booking not found");
@@ -612,6 +614,11 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
       .select("amount, entry_type")
       .eq("booking_id", booking.id);
 
+    const { data: addonRows } = await supabase
+      .from("addon_pricing")
+      .select("code, amount")
+      .eq("is_active", true);
+
     const reservationCredit = (ledger ?? [])
       .filter((row) => row.entry_type === "RESERVATION")
       .reduce((sum, row) => sum + row.amount, 0);
@@ -622,7 +629,10 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
       booking.dropoff_on,
       booking.dropoff_slot,
     );
-    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration);
+    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, {
+      mode: isHelmetMode(booking.extra_helmet_mode) ? booking.extra_helmet_mode : "NONE",
+      rates: addonRates(addonRows),
+    });
     return {
       lines: quote.atHub,
       reservationCredit,
@@ -631,6 +641,8 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
       days: quote.days,
       extraHours: quote.extraHours,
       perDay: quote.perDay,
+      helmetAmount: quote.helmetAmount,
+      helmetMode: isHelmetMode(booking.extra_helmet_mode) ? booking.extra_helmet_mode : "NONE",
     };
   });
 
@@ -640,11 +652,13 @@ export const payFinalAmount = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
-    const { buildQuote, computeDuration } = await import("./pricing");
+    const { addonRates, buildQuote, computeDuration, isHelmetMode } = await import("./pricing");
 
     const { data: booking } = await supabaseAdmin
       .from("bookings")
-      .select("id, plan_id, status, pickup_on, pickup_slot, dropoff_on, dropoff_slot")
+      .select(
+        "id, plan_id, status, pickup_on, pickup_slot, dropoff_on, dropoff_slot, extra_helmet_mode",
+      )
       .eq("id", data.bookingId)
       .eq("customer_id", context.userId)
       .single();
@@ -662,6 +676,11 @@ export const payFinalAmount = createServerFn({ method: "POST" })
       .select("amount, entry_type")
       .eq("booking_id", booking.id);
 
+    const { data: addonRows } = await supabaseAdmin
+      .from("addon_pricing")
+      .select("code, amount")
+      .eq("is_active", true);
+
     const reservationCredit = (ledger ?? [])
       .filter((row) => row.entry_type === "RESERVATION")
       .reduce((sum, row) => sum + row.amount, 0);
@@ -675,7 +694,13 @@ export const payFinalAmount = createServerFn({ method: "POST" })
       booking.dropoff_on,
       booking.dropoff_slot,
     );
-    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration);
+    const helmetMode = isHelmetMode(booking.extra_helmet_mode)
+      ? booking.extra_helmet_mode
+      : "NONE";
+    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, {
+      mode: helmetMode,
+      rates: addonRates(addonRows),
+    });
     const amountDue = quote.totalInitialLiability - reservationCredit;
 
     if (alreadySettled) {
@@ -752,6 +777,14 @@ export const payFinalAmount = createServerFn({ method: "POST" })
           amount: plan.deposit_amount,
           note: "Refundable security deposit",
         });
+    }
+
+    if (quote.helmetAmount > 0) {
+      entries.push({
+        entry_type: "HELMET",
+        amount: quote.helmetAmount,
+        note: helmetMode === "BUY" ? "Extra helmet purchase" : "Extra helmet rental",
+      });
     }
 
     await supabaseAdmin.from("payment_ledger").insert(
