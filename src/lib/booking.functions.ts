@@ -193,6 +193,86 @@ export const submitEligibility = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data, context }) => {
+    return submitEligibilityImpl(data, context);
+  });
+
+const HELMET_EDITABLE_STATUSES = [
+  "OTP_VERIFIED",
+  "ELIGIBILITY_STARTED",
+  "ELIGIBILITY_COMPLETED",
+  "ELIGIBILITY_SKIPPED",
+  "PAYMENT_PENDING",
+  "RESERVED",
+  "TRAVEL_TO_HUB",
+  "AT_HUB",
+  "KYC_IN_PROGRESS",
+  "APPROVED",
+  "FINAL_PAYMENT_PENDING",
+];
+
+/** Riders may still add or drop the extra helmet at the hub, until payment. */
+export const setExtraHelmet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookingId: string; mode: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { addonRates, buildQuote, computeDuration, isHelmetMode } = await import("./pricing");
+    const mode = isHelmetMode(data.mode) ? data.mode : "NONE";
+
+    const { data: booking } = await supabaseAdmin
+      .from("bookings")
+      .select("id, status, plan_id, pickup_on, pickup_slot, dropoff_on, dropoff_slot")
+      .eq("id", data.bookingId)
+      .eq("customer_id", context.userId)
+      .single();
+    if (!booking) throw new Error("Booking not found");
+    if (!HELMET_EDITABLE_STATUSES.includes(booking.status)) {
+      throw new Error("The helmet choice can no longer be changed for this booking.");
+    }
+
+    const [{ data: plan }, { data: addonRows }] = await Promise.all([
+      supabaseAdmin.from("plans").select("*").eq("id", booking.plan_id).single(),
+      supabaseAdmin.from("addon_pricing").select("code, amount").eq("is_active", true),
+    ]);
+    if (!plan) throw new Error("Plan not found");
+
+    const duration = computeDuration(
+      booking.pickup_on,
+      booking.pickup_slot,
+      booking.dropoff_on,
+      booking.dropoff_slot,
+    );
+    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, {
+      mode,
+      rates: addonRates(addonRows),
+    });
+
+    await supabaseAdmin
+      .from("bookings")
+      .update({
+        extra_helmet_mode: mode,
+        extra_helmet_amount: quote.helmetAmount,
+        ...(booking.pickup_on ? { quoted_total: quote.totalInitialLiability } : {}),
+      })
+      .eq("id", booking.id);
+
+    return { mode, amount: quote.helmetAmount, total: quote.totalInitialLiability };
+  });
+
+const submitEligibilityLegacy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      bookingId: string;
+      selfieCaptured: boolean;
+      selfiePath?: string | null;
+      dlFrontPath?: string | null;
+      dlBackPath?: string | null;
+      consent: boolean;
+      method: "DIGITAL" | "UPLOAD";
+    }) => input,
+  )
+  .handler(async ({ data, context }) => {
     if (!data.consent) throw new Error("We need your consent to run the eligibility check.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
