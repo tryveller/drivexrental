@@ -165,7 +165,7 @@ export const getJourney = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (!booking) {
-      return { booking: null, kyc: null, payments: [], rental: null, customer };
+      return { booking: null, kyc: null, payments: [], rental: null, customer, profile: null };
     }
 
     const [kyc, payments, rental] = await Promise.all([
@@ -178,12 +178,24 @@ export const getJourney = createServerFn({ method: "GET" })
       supabase.from("rentals").select("id, status").eq("booking_id", booking.id).maybeSingle(),
     ]);
 
+    // The saved rider profile decides whether KYC has to be done again.
+    const { kycReusable, readProfile } = await import("./profile.server");
+    const savedProfile = await readProfile(supabase, userId);
+
     return {
       booking,
       kyc: kyc.data,
       payments: payments.data ?? [],
       rental: rental.data,
       customer,
+      profile: savedProfile
+        ? {
+            kycStatus: savedProfile.kyc_status as string,
+            kycReusable: kycReusable(savedProfile),
+            walletBalance: (savedProfile.wallet_balance as number) ?? 0,
+            depositInWallet: (savedProfile.deposit_in_wallet as number) ?? 0,
+          }
+        : null,
     };
   });
 
