@@ -165,7 +165,15 @@ export const getJourney = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (!booking) {
-      return { booking: null, kyc: null, payments: [], rental: null, customer, profile: null };
+      return {
+        booking: null,
+        kyc: null,
+        payments: [],
+        rental: null,
+        customer,
+        vehicle: null,
+        profile: null,
+      };
     }
 
     const [kyc, payments, rental, vehicle] = await Promise.all([
