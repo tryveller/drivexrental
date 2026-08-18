@@ -342,7 +342,7 @@ export const payReservation = createServerFn({ method: "POST" })
 
     const { data: booking } = await supabaseAdmin
       .from("bookings")
-      .select("id, status, hub_id, model_id, plan_id, vehicle_id")
+      .select("id, status, hub_id, model_id, plan_id, vehicle_id, pickup_on, pickup_slot")
       .eq("id", data.bookingId)
       .eq("customer_id", context.userId)
       .single();
@@ -353,7 +353,8 @@ export const payReservation = createServerFn({ method: "POST" })
       .select("reservation_amount")
       .eq("id", booking.plan_id)
       .single();
-    const amount = plan?.reservation_amount ?? 199;
+    const { RESERVATION_FALLBACK, reservationHoldUntil } = await import("./pricing");
+    const amount = plan?.reservation_amount ?? RESERVATION_FALLBACK;
 
     const { data: alreadyPaid } = await supabaseAdmin
       .from("payments")
@@ -412,7 +413,7 @@ export const payReservation = createServerFn({ method: "POST" })
       payment_id: payment.id,
       entry_type: "RESERVATION",
       amount,
-      note: "₹199 reservation — adjusted against the amount due at the hub",
+      note: `₹${amount} reservation — adjusted against the amount due at the hub`,
     });
 
     await supabaseAdmin.from("vehicles").update({ status: "RESERVED" }).eq("id", vehicleId);
@@ -422,7 +423,11 @@ export const payReservation = createServerFn({ method: "POST" })
       .update({
         status: "RESERVED",
         vehicle_id: vehicleId,
-        reservation_expires_at: new Date(Date.now() + 72 * 3600 * 1000).toISOString(),
+        reservation_expires_at: reservationHoldUntil(
+          new Date(),
+          booking.pickup_on,
+          booking.pickup_slot,
+        ).toISOString(),
       })
       .eq("id", booking.id);
 
@@ -444,11 +449,24 @@ export const changePickupDate = createServerFn({ method: "POST" })
   .inputValidator((input: { bookingId: string; pickupOn: string; pickupSlot?: string }) => input)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { MAX_PICKUP_CHANGES, MAX_PICKUP_SHIFT_DAYS, isSlotKey } = await import("./pricing");
+    const {
+      MAX_PICKUP_CHANGES,
+      MAX_PICKUP_SHIFT_DAYS,
+      addonRates,
+      addDaysIso,
+      buildQuote,
+      computeDuration,
+      daysBetweenIso,
+      isHelmetMode,
+      isSlotKey,
+      reservationHoldUntil,
+    } = await import("./pricing");
 
     const { data: booking } = await supabaseAdmin
       .from("bookings")
-      .select("id, pickup_on, pickup_slot, original_pickup_on, pickup_change_count, dropoff_on")
+      .select(
+        "id, plan_id, pickup_on, pickup_slot, original_pickup_on, pickup_change_count, dropoff_on, dropoff_slot, extra_helmet_mode",
+      )
       .eq("id", data.bookingId)
       .eq("customer_id", context.userId)
       .single();
@@ -469,17 +487,47 @@ export const changePickupDate = createServerFn({ method: "POST" })
     }
 
     const slot = isSlotKey(data.pickupSlot) ? data.pickupSlot : (booking.pickup_slot ?? "MORNING");
-    const hold = new Date(`${data.pickupOn}T00:00:00`);
-    hold.setDate(hold.getDate() + 1);
+
+    // The rider keeps the same number of days: the drop-off moves with the
+    // pick-up, and the quote is rebuilt by the one pricing engine.
+    const shift = booking.pickup_on ? daysBetweenIso(booking.pickup_on, data.pickupOn) : 0;
+    const dropoffOn = booking.dropoff_on ? addDaysIso(booking.dropoff_on, shift) : null;
+    const duration = computeDuration(data.pickupOn, slot, dropoffOn, booking.dropoff_slot);
+
+    let quoted: { billed_days: number; billed_extra_hours: number; quoted_total: number } | null =
+      null;
+    if (duration) {
+      const [{ data: plan }, { data: addonRows }] = await Promise.all([
+        supabaseAdmin.from("plans").select("*").eq("id", booking.plan_id).single(),
+        supabaseAdmin.from("addon_pricing").select("code, amount").eq("is_active", true),
+      ]);
+      if (plan) {
+        const quote = buildQuote(
+          { ...plan, extra_km_rate: Number(plan.extra_km_rate) },
+          duration,
+          {
+            mode: isHelmetMode(booking.extra_helmet_mode) ? booking.extra_helmet_mode : "NONE",
+            rates: addonRates(addonRows),
+          },
+        );
+        quoted = {
+          billed_days: duration.days,
+          billed_extra_hours: duration.extraHours,
+          quoted_total: quote.totalInitialLiability,
+        };
+      }
+    }
 
     await supabaseAdmin
       .from("bookings")
       .update({
         pickup_on: data.pickupOn,
         pickup_slot: slot,
+        ...(dropoffOn ? { dropoff_on: dropoffOn } : {}),
+        ...(quoted ?? {}),
         pickup_change_count: (booking.pickup_change_count ?? 0) + 1,
         pickup_changed_at: new Date().toISOString(),
-        reservation_expires_at: hold.toISOString(),
+        reservation_expires_at: reservationHoldUntil(new Date(), data.pickupOn, slot).toISOString(),
       })
       .eq("id", booking.id);
 
@@ -958,8 +1006,9 @@ export const confirmHandover = createServerFn({ method: "POST" })
     ]);
     if (!plan || !vehicle) throw new Error("Vehicle or plan missing");
 
-    const periodDays = plan.plan_type === "WEEKLY" ? 7 : 30;
-    const resets = new Date(Date.now() + periodDays * 86_400_000);
+    const { nextPeriodDate, todayIso } = await import("./pricing");
+    const startedOn = todayIso();
+    const resetsOn = nextPeriodDate(plan, startedOn);
 
     const { data: rental, error } = await supabaseAdmin
       .from("rentals")
@@ -969,9 +1018,10 @@ export const confirmHandover = createServerFn({ method: "POST" })
         vehicle_id: vehicle.id,
         plan_id: plan.id,
         period_start_odometer: vehicle.odometer_km,
-        period_resets_on: resets.toISOString().slice(0, 10),
+        period_started_on: startedOn,
+        period_resets_on: resetsOn,
         next_payment_amount: plan.rental_amount,
-        next_payment_due_on: resets.toISOString().slice(0, 10),
+        next_payment_due_on: resetsOn,
         return_hub_id: booking.hub_id,
         payments_completed: 1,
       })

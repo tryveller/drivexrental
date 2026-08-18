@@ -1,6 +1,6 @@
 import { Check, ShieldCheck } from "lucide-react";
 import type { CatalogPlan } from "@/lib/catalog.functions";
-import { minDurationDays, planDayRate } from "@/lib/pricing";
+import { minDurationDays, minDurationQuote } from "@/lib/pricing";
 import { rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -15,8 +15,12 @@ export function PlanCard({
   onSelect: () => void;
 }) {
   const { t } = useLanguage();
-  const dayRate = planDayRate(plan);
+  // The same engine that bills the rider on the dates screen produces the
+  // headline numbers here, so the two can never disagree.
   const minDays = minDurationDays(plan);
+  const quote = minDurationQuote(plan);
+  const dayRate = quote.perDay ?? plan.rental_amount;
+  const periodTotal = plan.plan_type === "RTO" ? quote.chargesTotal : quote.rentAmount;
   const title = t(
     plan.plan_type === "DAILY"
       ? "planDaily"
@@ -68,7 +72,7 @@ export function PlanCard({
           <dt className="text-muted-foreground">
             {t("totalForPeriod", { period: plan.billing_period })}
           </dt>
-          <dd className="font-medium">{rupees(plan.rental_amount)}</dd>
+          <dd className="font-medium">{rupees(periodTotal)}</dd>
         </div>
         <div className="flex justify-between gap-4 border-t border-border pt-1.5">
           <dt className="text-muted-foreground">{t("kmIncluded")}</dt>
