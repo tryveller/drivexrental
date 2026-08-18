@@ -487,9 +487,6 @@ function ActionButton<T>({
 
 function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
   const { t } = useLanguage();
-  const [dlNumber, setDlNumber] = useState("");
-  const [dlName, setDlName] = useState("");
-  const [dlDob, setDlDob] = useState("");
   const [selfiePath, setSelfiePath] = useState<string | null>(null);
   const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
   const [dlBackPath, setDlBackPath] = useState<string | null>(null);
@@ -501,9 +498,6 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       submitEligibility({
         data: {
           bookingId,
-          dlNumber,
-          dlName,
-          dlDob,
           selfieCaptured: Boolean(selfiePath),
           selfiePath,
           dlFrontPath,
@@ -541,34 +535,6 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       body={
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">{t("eligibilityHint")}</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="dl">{t("dlNumberLabel")}</Label>
-              <Input
-                id="dl"
-                value={dlNumber}
-                onChange={(event) => setDlNumber(event.target.value.toUpperCase())}
-                placeholder="KA0120150001234"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="dlname">{t("nameOnLicence")}</Label>
-              <Input
-                id="dlname"
-                value={dlName}
-                onChange={(event) => setDlName(event.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="dob">{t("dateOfBirth")}</Label>
-              <Input
-                id="dob"
-                type="date"
-                value={dlDob}
-                onChange={(event) => setDlDob(event.target.value)}
-              />
-            </div>
-          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <CaptureField
               bookingId={bookingId}
@@ -614,8 +580,6 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             disabled={
               submit.isPending ||
               !consent ||
-              dlNumber.length < 10 ||
-              !dlName.trim() ||
               !dlFrontPath ||
               !selfiePath
             }
