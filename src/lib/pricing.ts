@@ -42,7 +42,67 @@ export type Quote = {
   rentAmount: number;
   /** Rent ÷ billed days (the refundable deposit is excluded). */
   perDay: number | null;
+  /** Amount charged for the optional extra helmet (0 when none). */
+  helmetAmount: number;
 };
+
+// ---------------------------------------------------------------------------
+// Helmet add-on. One helmet always ships free with the bike and comes back
+// with it; a rider may rent or buy exactly one extra. Every rate is read from
+// the addon_pricing table — the fallbacks below only guard a failed fetch.
+// ---------------------------------------------------------------------------
+
+export type HelmetMode = "NONE" | "RENT" | "BUY";
+
+export type AddonRates = {
+  helmetDailyRate: number;
+  helmetMonthlyRate: number;
+  helmetBuyPrice: number;
+  helmetsIncluded: number;
+};
+
+export const ADDON_RATE_FALLBACK: AddonRates = {
+  helmetDailyRate: 10,
+  helmetMonthlyRate: 100,
+  helmetBuyPrice: 1000,
+  helmetsIncluded: 1,
+};
+
+export function addonRates(rows: { code: string; amount: number }[] | null | undefined): AddonRates {
+  const value = (code: string, fallback: number) =>
+    rows?.find((row) => row.code === code)?.amount ?? fallback;
+  return {
+    helmetDailyRate: value("helmet_daily_rate", ADDON_RATE_FALLBACK.helmetDailyRate),
+    helmetMonthlyRate: value("helmet_monthly_rate", ADDON_RATE_FALLBACK.helmetMonthlyRate),
+    helmetBuyPrice: value("helmet_buy_price", ADDON_RATE_FALLBACK.helmetBuyPrice),
+    helmetsIncluded: value("helmets_included", ADDON_RATE_FALLBACK.helmetsIncluded),
+  };
+}
+
+export function isHelmetMode(value: unknown): value is HelmetMode {
+  return value === "NONE" || value === "RENT" || value === "BUY";
+}
+
+/** Monthly plans rent the helmet by the month; shorter plans by the day. */
+export function helmetCharge(
+  plan: Pick<PlanConfig, "plan_type">,
+  duration: RideDuration | null | undefined,
+  mode: HelmetMode,
+  rates: AddonRates,
+): number {
+  if (mode === "NONE") return 0;
+  if (mode === "BUY") return rates.helmetBuyPrice;
+  if (plan.plan_type === "MONTHLY" || plan.plan_type === "RTO") {
+    const months = duration ? Math.max(1, Math.ceil(duration.days / 30)) : 1;
+    return rates.helmetMonthlyRate * months;
+  }
+  const days = duration
+    ? Math.max(1, duration.days + (duration.extraHours > 0 ? 1 : 0))
+    : plan.plan_type === "WEEKLY"
+      ? 7
+      : 1;
+  return rates.helmetDailyRate * days;
+}
 
 // ---------------------------------------------------------------------------
 // Pick-up / drop-off slots. Riders pick a bucket, not an exact minute — it is
@@ -103,7 +163,11 @@ export function computeDuration(
   return { days, extraHours, totalHours: hours };
 }
 
-export function buildQuote(plan: PlanConfig, duration?: RideDuration | null): Quote {
+export function buildQuote(
+  plan: PlanConfig,
+  duration?: RideDuration | null,
+  helmet?: { mode: HelmetMode; rates: AddonRates } | null,
+): Quote {
   const reservation = plan.reservation_amount;
   const lines: QuoteLine[] = [];
   let rentAmount = plan.rental_amount;
@@ -149,6 +213,18 @@ export function buildQuote(plan: PlanConfig, duration?: RideDuration | null): Qu
     }
   }
 
+  const helmetMode = helmet?.mode ?? "NONE";
+  const helmetAmount =
+    helmetMode === "NONE"
+      ? 0
+      : helmetCharge(plan, duration ?? null, helmetMode, helmet?.rates ?? ADDON_RATE_FALLBACK);
+  if (helmetAmount > 0) {
+    lines.push({
+      labelKey: helmetMode === "BUY" ? "lineHelmetBuy" : "lineHelmetRent",
+      amount: helmetAmount,
+    });
+  }
+
   const totalInitialLiability = lines.reduce((sum, line) => sum + line.amount, 0);
 
   return {
@@ -163,6 +239,7 @@ export function buildQuote(plan: PlanConfig, duration?: RideDuration | null): Qu
     perDay: duration
       ? Math.round(rentAmount / (duration.days + duration.extraHours / 24))
       : null,
+    helmetAmount,
   };
 }
 
