@@ -267,6 +267,7 @@ export const submitEligibility = createServerFn({ method: "POST" })
     if (!data.consent) throw new Error("We need your consent to run the eligibility check.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
+    const { persistDocuments } = await import("./documents.server");
 
     // Riders only upload documents now — the licence is read by the hub team,
     // never typed in, so eligibility depends on the captures being present.
@@ -292,6 +293,12 @@ export const submitEligibility = createServerFn({ method: "POST" })
       },
       { onConflict: "booking_id" },
     );
+
+    await persistDocuments(supabaseAdmin, context.userId, {
+      "dl-front": data.dlFrontPath,
+      "dl-back": data.dlBackPath,
+      selfie: data.selfiePath,
+    });
 
     await supabaseAdmin
       .from("bookings")
