@@ -3,7 +3,10 @@ import { CalendarDays, Clock } from "lucide-react";
 import type { CatalogPlan } from "@/lib/catalog.functions";
 import {
   SLOTS,
+  addDaysIso,
   buildQuote,
+  daysBetweenIso,
+  todayIso,
   computeDuration,
   lateReturnFee,
   meetsMinDuration,
@@ -23,7 +26,7 @@ export type RideDates = {
   dropoffSlot: string;
 };
 
-export { todayIso } from "@/lib/pricing";
+export { todayIso };
 
 export function defaultDates(): RideDates {
   const today = todayIso();
