@@ -28,6 +28,7 @@ import {
   computeConditionScore,
   computeDuration,
   meetsMinDuration,
+  minDurationDays,
   distanceKm,
   planDayRate,
   type HelmetMode,
