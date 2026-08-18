@@ -241,9 +241,16 @@ function Discovery() {
             {t("changeLocation")}
           </button>
         </div>
-        <p className="mt-2 border-t border-primary/15 pt-2 text-[11px] text-muted-foreground">
-          {t("compareHint")}
-        </p>
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-primary/15 pt-2">
+          <p className="text-[11px] text-muted-foreground">{t("compareHint")}</p>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/eligibility" })}
+            className="shrink-0 text-[11px] font-medium text-primary underline-offset-2 hover:underline"
+          >
+            {t("checkEligibilityAnytime")}
+          </button>
+        </div>
       </section>
 
       <section className="mt-4">

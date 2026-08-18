@@ -55,6 +55,9 @@ export function AccountMenu() {
           <span className="block text-sm">{label}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => go("/eligibility")}>
+          <ShieldCheck className="mr-2 h-4 w-4" /> {t("checkEligibilityAnytime")}
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => go("/journey")}>
           <ClipboardList className="mr-2 h-4 w-4" /> {t("currentBookings")}
         </DropdownMenuItem>
