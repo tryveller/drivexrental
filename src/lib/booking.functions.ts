@@ -250,9 +250,6 @@ export const setExtraHelmet = createServerFn({ method: "POST" })
     return { mode, amount: quote.helmetAmount, total: quote.totalInitialLiability };
   });
 
-const CONSENT_TEXT =
-  "I authorise DriveX to perform identity, document and rental eligibility checks required to process my rental request, and I consent to the use and sharing of my information with authorized third parties and credit bureaus for credit assessment and verification.";
-
 export const submitEligibility = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -271,6 +268,7 @@ export const submitEligibility = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
     const { persistDocuments } = await import("./documents.server");
+    const { CONSENT_TEXT, CONSENT_VERSION } = await import("./consent");
 
     // Riders only upload documents now — the licence is read by the hub team,
     // never typed in, so eligibility depends on the captures being present.
@@ -288,7 +286,7 @@ export const submitEligibility = createServerFn({ method: "POST" })
         dl_front_path: data.dlFrontPath ?? null,
         dl_back_path: data.dlBackPath ?? null,
         eligibility_result: result,
-        consent_version: "v2.0",
+        consent_version: CONSENT_VERSION,
         consent_text: CONSENT_TEXT,
         consent_at: new Date().toISOString(),
         consent_device: "rider-app",
@@ -560,6 +558,7 @@ export const submitHubKyc = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
     const { persistDocuments } = await import("./documents.server");
+    const { CONSENT_TEXT, CONSENT_VERSION } = await import("./consent");
 
     // Documents only: nothing is typed, so the only check is that every
     // required capture actually uploaded.
@@ -592,7 +591,7 @@ export const submitHubKyc = createServerFn({ method: "POST" })
         dl_back_path: data.dlBackPath ?? null,
         address_proof_path: data.addressProofPath ?? null,
         pan_path: data.panPath ?? null,
-        consent_version: "v2.0",
+        consent_version: CONSENT_VERSION,
         consent_text: CONSENT_TEXT,
         consent_at: new Date().toISOString(),
         consent_device: "rider-app",
