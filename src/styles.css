@@ -182,3 +182,37 @@
     transform: scaleX(1);
   }
 }
+
+/*
+ * Per-model card themes. Each class re-points the local --primary scale, so
+ * every token-driven child (badges, icons, prices) shifts with the bike —
+ * a Radeon card reads deep ember, Sport reads bright amber, Jupiter reads gold.
+ */
+.bike-theme {
+  --bike-wash: color-mix(in oklab, var(--primary) 12%, transparent);
+  --bike-edge: color-mix(in oklab, var(--primary) 38%, transparent);
+}
+
+.bike-theme-ember {
+  --primary: oklch(0.62 0.21 34);
+  --primary-foreground: oklch(0.98 0.012 75);
+  --ring: oklch(0.62 0.21 34);
+}
+
+.bike-theme-amber {
+  --primary: oklch(0.75 0.18 62);
+  --primary-foreground: oklch(0.17 0.02 55);
+  --ring: oklch(0.75 0.18 62);
+}
+
+.bike-theme-gold {
+  --primary: oklch(0.85 0.15 90);
+  --primary-foreground: oklch(0.17 0.02 55);
+  --ring: oklch(0.85 0.15 90);
+}
+
+.bike-theme-copper {
+  --primary: oklch(0.55 0.14 44);
+  --primary-foreground: oklch(0.98 0.012 75);
+  --ring: oklch(0.55 0.14 44);
+}
