@@ -10,7 +10,6 @@ import {
   ShieldAlert,
   Wallet,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { BookingQr } from "@/components/drivex/BookingQr";
 import { DriveXLogo } from "@/components/drivex/DriveXLogo";
