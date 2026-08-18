@@ -129,6 +129,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // The hub kiosk stands at the hub, so it never asks for the rider's location —
+  // language is still asked, because the rider reads this screen.
+  const isKiosk = useRouterState({
+    select: (state) => state.location.pathname.startsWith("/kiosk"),
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -138,10 +143,14 @@ function RootComponent() {
           <AccessGate>
             <SplashScreen>
               <LanguageGate>
-                <LocationGate>
-                  {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                {isKiosk ? (
                   <Outlet />
-                </LocationGate>
+                ) : (
+                  <LocationGate>
+                    {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+                    <Outlet />
+                  </LocationGate>
+                )}
               </LanguageGate>
             </SplashScreen>
           </AccessGate>
