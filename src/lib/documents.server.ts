@@ -1,6 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const DOC_TYPES = ["dl-front", "dl-back", "address-proof", "selfie", "pan"] as const;
+export const DOC_TYPES = [
+  "dl-front",
+  "dl-back",
+  "aadhaar-front",
+  "aadhaar-back",
+  "address-proof",
+  "selfie",
+  "pan",
+] as const;
 export type DocType = (typeof DOC_TYPES)[number];
 
 /** Remembers each document a rider has already given, so we never ask twice. */
