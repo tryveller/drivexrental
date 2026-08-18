@@ -23,36 +23,24 @@ import { Badge } from "@/components/ui/badge";
 import { useRiderSession } from "@/hooks/useRiderSession";
 import { getCatalog } from "@/lib/catalog.functions";
 import {
-  acceptAgreement,
   changePickupDate,
   checkInAtHub,
   confirmHandover,
   createBooking,
-  getFinalPaymentBreakdown,
   getJourney,
   getSavedDocuments,
-  payFinalAmount,
   payReservation,
-  setExtraHelmet,
   setTravelMode,
   skipEligibility,
   submitEligibility,
-  submitHubKyc,
-  reuseSavedKyc,
-  saveDocument,
 } from "@/lib/booking.functions";
 import {
   MAX_PICKUP_SHIFT_DAYS,
-  OTHER_POSSIBLE_CHARGE_KEYS,
   addonRates,
   buildQuote,
   computeDuration,
   isHelmetMode,
   slotLabelKey,
-  type AddonRates,
-  type HelmetMode,
-  type PlanType,
-  type RideDuration,
 } from "@/lib/pricing";
 import {
   ActionButton,
