@@ -1111,6 +1111,7 @@ export type Database = {
         | "CHALLAN"
         | "DAMAGE"
         | "REFUND"
+        | "HELMET"
       payment_status:
         | "CREATED"
         | "INITIATED"
@@ -1313,6 +1314,7 @@ export const Constants = {
         "CHALLAN",
         "DAMAGE",
         "REFUND",
+        "HELMET",
       ],
       payment_status: [
         "CREATED",
