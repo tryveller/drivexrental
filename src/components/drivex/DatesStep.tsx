@@ -1,10 +1,18 @@
 import { CalendarDays, Clock } from "lucide-react";
 
 import type { CatalogPlan } from "@/lib/catalog.functions";
-import { SLOTS, buildQuote, computeDuration, lateReturnFee } from "@/lib/pricing";
+import {
+  SLOTS,
+  buildQuote,
+  computeDuration,
+  lateReturnFee,
+  type AddonRates,
+  type HelmetMode,
+} from "@/lib/pricing";
 import { rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage, type TKey } from "@/lib/i18n";
+import { HelmetPicker } from "./HelmetPicker";
 
 export type RideDates = {
   pickupOn: string;
@@ -63,10 +71,16 @@ export function DatesStep({
   plan,
   value,
   onChange,
+  rates,
+  helmet,
+  onHelmetChange,
 }: {
   plan: CatalogPlan;
   value: RideDates;
   onChange: (next: RideDates) => void;
+  rates: AddonRates;
+  helmet: HelmetMode;
+  onHelmetChange: (mode: HelmetMode) => void;
 }) {
   const { t } = useLanguage();
   const duration = computeDuration(
@@ -75,7 +89,7 @@ export function DatesStep({
     value.dropoffOn,
     value.dropoffSlot,
   );
-  const quote = buildQuote(plan, duration);
+  const quote = buildQuote(plan, duration, { mode: helmet, rates });
 
   return (
     <div className="space-y-4">
@@ -130,6 +144,14 @@ export function DatesStep({
           {t("dropoffAfterPickup")}
         </p>
       ) : (
+        <>
+        <HelmetPicker
+          plan={plan}
+          duration={duration}
+          rates={rates}
+          value={helmet}
+          onChange={onHelmetChange}
+        />
         <div className="rounded-2xl border border-primary/40 bg-primary/10 p-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{t("daysBilledLabel")}</span>
@@ -176,6 +198,7 @@ export function DatesStep({
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">{t("bikeReadyNote")}</p>
         </div>
+        </>
       )}
     </div>
   );
