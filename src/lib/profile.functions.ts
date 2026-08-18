@@ -147,3 +147,23 @@ export const revokeRiderPhoneInvite = createServerFn({ method: "POST" })
       .eq("profile_id", profileId);
     return { ok: true };
   });
+
+/** Riders can always take the wallet money out instead of keeping it. */
+export const withdrawWallet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { moveWallet, profileIdFor, readProfile } = await import("./profile.server");
+    const profileId = await profileIdFor(supabaseAdmin, context.userId);
+    const profile = await readProfile(supabaseAdmin, context.userId);
+    const amount = profile?.wallet_balance ?? 0;
+    if (!profileId || amount <= 0) throw new Error("Your wallet is empty.");
+    await moveWallet(supabaseAdmin, {
+      profileId,
+      customerId: context.userId,
+      entryType: "REFUND_PAYOUT",
+      amount,
+      note: "Payout to your bank / UPI",
+    });
+    return { amount };
+  });
