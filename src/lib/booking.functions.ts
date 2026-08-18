@@ -549,11 +549,13 @@ export const submitHubKyc = createServerFn({ method: "POST" })
       dlFrontPath?: string | null;
       dlBackPath?: string | null;
       addressProofPath?: string | null;
+      panPath?: string | null;
     }) => input,
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
+    const { persistDocuments } = await import("./documents.server");
 
     // Documents only: nothing is typed, so the only check is that every
     // required capture actually uploaded.
@@ -585,11 +587,20 @@ export const submitHubKyc = createServerFn({ method: "POST" })
         dl_front_path: data.dlFrontPath ?? null,
         dl_back_path: data.dlBackPath ?? null,
         address_proof_path: data.addressProofPath ?? null,
+        pan_path: data.panPath ?? null,
         address_proof_type: "UPLOAD",
         address_proof_status: "VERIFIED",
         action_required_reason: null,
       })
       .eq("booking_id", data.bookingId);
+
+    await persistDocuments(supabaseAdmin, context.userId, {
+      "dl-front": data.dlFrontPath,
+      "dl-back": data.dlBackPath,
+      "address-proof": data.addressProofPath,
+      selfie: data.selfiePath,
+      pan: data.panPath,
+    });
 
     await supabaseAdmin
       .from("bookings")
@@ -599,6 +610,28 @@ export const submitHubKyc = createServerFn({ method: "POST" })
 
     await track("kyc_approved", {}, { customerId: context.userId, bookingId: data.bookingId });
     return { status: "APPROVED" as const };
+  });
+
+export const getSavedDocuments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { readDocuments } = await import("./documents.server");
+    return readDocuments(context.supabase, context.userId);
+  });
+
+export const saveDocument = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { docType: string; path: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { persistDocuments, DOC_TYPES } = await import("./documents.server");
+    if (!(DOC_TYPES as readonly string[]).includes(data.docType)) {
+      throw new Error("Unknown document type");
+    }
+    await persistDocuments(supabaseAdmin, context.userId, {
+      [data.docType]: data.path,
+    } as Record<string, string>);
+    return { ok: true };
   });
 
 export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
