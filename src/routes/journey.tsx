@@ -86,6 +86,7 @@ function stepFor(status: string | undefined): Step {
     case "BIKE_SELECTED":
       return "PLAN";
     case "OTP_VERIFIED":
+    case "ELIGIBILITY_STARTED":
       return "ELIGIBILITY";
     case "ELIGIBILITY_COMPLETED":
     case "ELIGIBILITY_SKIPPED":
@@ -98,6 +99,7 @@ function stepFor(status: string | undefined): Step {
       return "AT_HUB";
     case "KYC_IN_PROGRESS":
       return "KYC";
+    case "APPROVED":
     case "FINAL_PAYMENT_PENDING":
       return "PAYMENT";
     case "PAID":
@@ -175,7 +177,9 @@ function JourneyPage() {
   const model = catalog.data?.models.find((row) => row.id === booking?.model_id) ?? null;
   const hub = catalog.data?.hubs.find((row) => row.id === booking?.hub_id) ?? null;
 
-  if (!booking || !plan || !model || !hub) {
+  // Only a missing booking is an empty state — a booking whose plan/model/hub
+  // row we can't resolve must still be resumable.
+  if (!booking) {
     return (
       <AppShell subtitle={t("subtitleBooking")}>
         <EmptyState onBrowse={() => navigate({ to: "/" })} />
@@ -204,7 +208,7 @@ function JourneyPage() {
     booking.dropoff_on,
     booking.dropoff_slot,
   );
-  const quote = buildQuote(plan, duration);
+  const quote = plan ? buildQuote(plan, duration) : null;
 
   return (
     <AppShell subtitle={t("subtitleBooking")}>
@@ -215,13 +219,19 @@ function JourneyPage() {
               {t("bookingLabel", { code: booking.booking_code })}
             </p>
             <h1 className="mt-1 text-lg font-semibold">
-              {modelTitle(model.brand, model.name)}
+              {model ? modelTitle(model.brand, model.name) : t("subtitleBooking")}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {hub.name} ·{" "}
-              {plan.plan_type === "RTO"
-                ? t("planRto")
-                : `${rupees(plan.rental_amount)} / ${plan.billing_period}`}
+              {[
+                hub?.name,
+                plan
+                  ? plan.plan_type === "RTO"
+                    ? t("planRto")
+                    : `${rupees(plan.rental_amount)} / ${plan.billing_period}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
           </div>
           <Badge variant="secondary">{booking.status.replaceAll("_", " ").toLowerCase()}</Badge>
@@ -233,7 +243,7 @@ function JourneyPage() {
         )}
       </header>
 
-      {duration && (
+      {duration && quote && (
         <BookingDatesCard
           booking={booking}
           perDay={quote.perDay}
@@ -249,7 +259,7 @@ function JourneyPage() {
           <EligibilityStep bookingId={booking.id} onDone={refresh} />
         )}
 
-        {step === "RESERVE" && (
+        {step === "RESERVE" && plan && quote && (
           <StepCard
             icon={<Wallet className="h-5 w-5 text-primary" />}
             title={t("reserveTitle", { amount: rupees(plan.reservation_amount) })}
@@ -280,7 +290,7 @@ function JourneyPage() {
           />
         )}
 
-        {step === "TRAVEL" && (
+        {step === "TRAVEL" && hub && (
           <StepCard
             icon={<MapPin className="h-5 w-5 text-primary" />}
             title={t("travelTitle")}
@@ -317,7 +327,7 @@ function JourneyPage() {
           />
         )}
 
-        {step === "AT_HUB" && (
+        {step === "AT_HUB" && hub && (
           <StepCard
             icon={<MapPin className="h-5 w-5 text-primary" />}
             title={t("checkInTitle")}

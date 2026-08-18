@@ -123,17 +123,24 @@ export const createBooking = createServerFn({ method: "POST" })
 
 export const getJourney = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input?: { bookingId?: string } | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { data: bookings } = await supabase
+    let query = supabase
       .from("bookings")
       .select(BOOKING_SELECT)
-      .eq("customer_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .eq("customer_id", userId);
+    if (data.bookingId) query = query.eq("id", data.bookingId);
+    const { data: bookings } = await query.order("created_at", { ascending: false });
 
-    const booking = bookings?.[0] ?? null;
+    const rows = bookings ?? [];
+    // A rider can have older, finished bookings created after an in-progress one
+    // (e.g. a hub-side reservation). Always resume the live booking first.
+    const booking =
+      rows.find((row) => !["CLOSED", "REJECTED", "CANCELLED"].includes(row.status)) ??
+      rows[0] ??
+      null;
     const { data: customer } = await supabase
       .from("customers")
       .select("id, phone, full_name")
