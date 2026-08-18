@@ -502,18 +502,24 @@ function ReserveStep({
 function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
   const { t } = useLanguage();
   const saved = useQuery({ queryKey: ["saved-docs"], queryFn: () => getSavedDocuments() });
-  const [selfiePath, setSelfiePath] = useState<string | null>(null);
-  const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
-  const [dlBackPath, setDlBackPath] = useState<string | null>(null);
+  const [docs, setDocs] = useState<IdDocState>(EMPTY_ID_DOCS);
+  const [method, setMethod] = useState<EligibilityMethod>("UPLOAD");
   const [prefilled, setPrefilled] = useState(false);
   const [consent, setConsent] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  /** Lets a rider replace an ID we already hold instead of being stuck on it. */
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!saved.data || prefilled) return;
-    setSelfiePath((old) => old ?? saved.data["selfie"] ?? null);
-    setDlFrontPath((old) => old ?? saved.data["dl-front"] ?? null);
-    setDlBackPath((old) => old ?? saved.data["dl-back"] ?? null);
+    const map = saved.data;
+    setDocs((old) => ({
+      aadhaarFrontPath: old.aadhaarFrontPath ?? map["aadhaar-front"] ?? null,
+      aadhaarBackPath: old.aadhaarBackPath ?? map["aadhaar-back"] ?? null,
+      dlFrontPath: old.dlFrontPath ?? map["dl-front"] ?? null,
+      dlBackPath: old.dlBackPath ?? map["dl-back"] ?? null,
+      panPath: old.panPath ?? map["pan"] ?? null,
+    }));
     setPrefilled(true);
   }, [saved.data, prefilled]);
 
@@ -522,21 +528,21 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       submitEligibility({
         data: {
           bookingId,
-          selfieCaptured: Boolean(selfiePath),
-          selfiePath,
-          dlFrontPath,
-          dlBackPath,
+          ...docs,
           consent,
-          method: "DIGITAL",
+          method,
         },
       }),
     onSuccess: (data) => {
       setResult(data.result);
+      setEditing(false);
       onDone();
     },
     onError: (error: unknown) =>
       toast.error(error instanceof Error ? error.message : t("couldNotCheck")),
   });
+
+  const docsReady = eligibilityDocsComplete(docs);
 
   if (result) {
     return (
