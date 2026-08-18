@@ -269,6 +269,7 @@ export type Database = {
           doc_type: string
           id: string
           path: string
+          profile_id: string | null
           updated_at: string
         }
         Insert: {
@@ -277,6 +278,7 @@ export type Database = {
           doc_type: string
           id?: string
           path: string
+          profile_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -285,9 +287,18 @@ export type Database = {
           doc_type?: string
           id?: string
           path?: string
+          profile_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customer_documents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "rider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customers: {
         Row: {
@@ -298,6 +309,7 @@ export type Database = {
           locality: string | null
           phone: string
           pin_code: string | null
+          profile_id: string | null
           updated_at: string
         }
         Insert: {
@@ -308,6 +320,7 @@ export type Database = {
           locality?: string | null
           phone: string
           pin_code?: string | null
+          profile_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -318,9 +331,18 @@ export type Database = {
           locality?: string | null
           phone?: string
           pin_code?: string | null
+          profile_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "rider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       eligibility_checks: {
         Row: {
@@ -882,6 +904,95 @@ export type Database = {
           },
         ]
       }
+      rider_phone_invites: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          id: string
+          invited_by: string | null
+          label: string | null
+          phone: string
+          profile_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          label?: string | null
+          phone: string
+          profile_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          label?: string | null
+          phone?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rider_phone_invites_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "rider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rider_profiles: {
+        Row: {
+          created_at: string
+          credit_score: number
+          deposit_in_wallet: number
+          display_name: string | null
+          dl_dob: string | null
+          dl_name: string | null
+          dl_number: string | null
+          dl_valid_until: string | null
+          id: string
+          kyc_approved_at: string | null
+          kyc_expires_on: string | null
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
+          updated_at: string
+          wallet_balance: number
+        }
+        Insert: {
+          created_at?: string
+          credit_score?: number
+          deposit_in_wallet?: number
+          display_name?: string | null
+          dl_dob?: string | null
+          dl_name?: string | null
+          dl_number?: string | null
+          dl_valid_until?: string | null
+          id?: string
+          kyc_approved_at?: string | null
+          kyc_expires_on?: string | null
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          updated_at?: string
+          wallet_balance?: number
+        }
+        Update: {
+          created_at?: string
+          credit_score?: number
+          deposit_in_wallet?: number
+          display_name?: string | null
+          dl_dob?: string | null
+          dl_name?: string | null
+          dl_number?: string | null
+          dl_valid_until?: string | null
+          id?: string
+          kyc_approved_at?: string | null
+          kyc_expires_on?: string | null
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          updated_at?: string
+          wallet_balance?: number
+        }
+        Relationships: []
+      }
       service_bookings: {
         Row: {
           completed_at: string | null
@@ -1145,11 +1256,63 @@ export type Database = {
           },
         ]
       }
+      wallet_ledger: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          created_at: string
+          customer_id: string | null
+          direction: string
+          entry_type: string
+          id: string
+          note: string | null
+          profile_id: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          direction: string
+          entry_type: string
+          id?: string
+          note?: string | null
+          profile_id: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          direction?: string
+          entry_type?: string
+          id?: string
+          note?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_ledger_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_ledger_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "rider_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      current_profile_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
