@@ -35,7 +35,7 @@ export const createBooking = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
-    const { addonRates, buildQuote, computeDuration, isHelmetMode, isSlotKey } =
+    const { addonRates, buildQuote, computeDuration, isHelmetMode, isSlotKey, meetsMinDuration, minDurationDays } =
       await import("./pricing");
 
     // The server owns the quote: dates come from the rider, amounts never do.
@@ -55,6 +55,14 @@ export const createBooking = createServerFn({ method: "POST" })
       supabaseAdmin.from("addon_pricing").select("code, amount").eq("is_active", true),
     ]);
     const helmet = { mode: helmetMode, rates: addonRates(addonRows) };
+    // The plan's minimum duration is enforced here too: weekly/monthly day
+    // rates are lower than the daily rate, so a short booking on them would
+    // otherwise undercut the daily plan.
+    if (plan && plan.plan_type !== "RTO" && duration && !meetsMinDuration(plan, duration)) {
+      throw new Error(
+        `This plan needs at least ${minDurationDays(plan)} days. Please pick a later drop-off date.`,
+      );
+    }
     const quote = plan
       ? buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, helmet)
       : null;
