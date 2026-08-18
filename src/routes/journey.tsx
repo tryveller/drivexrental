@@ -322,11 +322,6 @@ function JourneyPage() {
             action={
               <div className="flex flex-col gap-2 sm:flex-row">
                 <ActionButton
-                  label={t("bookRapido")}
-                  run={() => setTravelMode({ data: { bookingId: booking.id, mode: "RAPIDO" } })}
-                  onDone={refresh}
-                />
-                <ActionButton
                   variant="outline"
                   label={t("travelSelf")}
                   run={() => setTravelMode({ data: { bookingId: booking.id, mode: "SELF" } })}
@@ -343,11 +338,6 @@ function JourneyPage() {
             title={t("checkInTitle")}
             body={
               <div className="text-sm text-muted-foreground">
-                {booking.rapido_coupon && (
-                  <p className="mb-2 rounded-xl bg-accent px-3 py-2 text-accent-foreground">
-                    {t("rapidoCoupon", { code: booking.rapido_coupon })}
-                  </p>
-                )}
                 <p>
                   {t("reachHubHint")} ({hub.name})
                 </p>
