@@ -15,7 +15,6 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/drivex/AppShell";
 import { PageLoader } from "@/components/drivex/PageLoader";
-import { CaptureField } from "@/components/drivex/CaptureField";
 import {
   EMPTY_ID_DOCS,
   IdDocumentFields,
