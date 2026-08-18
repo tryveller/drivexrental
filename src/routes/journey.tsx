@@ -30,6 +30,7 @@ import {
   createBooking,
   getFinalPaymentBreakdown,
   getJourney,
+  getSavedDocuments,
   payFinalAmount,
   payReservation,
   setExtraHelmet,
@@ -37,6 +38,7 @@ import {
   skipEligibility,
   submitEligibility,
   submitHubKyc,
+  saveDocument,
 } from "@/lib/booking.functions";
 import {
   MAX_PICKUP_SHIFT_DAYS,
@@ -619,6 +621,26 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
   );
 }
 
+type KycDocStep = {
+  slot: "dl-front" | "dl-back" | "address-proof" | "selfie" | "pan";
+  labelKey: TKey;
+  hintKey: TKey;
+  facing?: "user" | "environment";
+  optional?: boolean;
+};
+
+const KYC_DOC_STEPS: KycDocStep[] = [
+  { slot: "dl-front", labelKey: "dlFrontLabel", hintKey: "dlFrontHint" },
+  { slot: "dl-back", labelKey: "dlBackLabel", hintKey: "dlBackHint" },
+  {
+    slot: "address-proof",
+    labelKey: "addressProofPhotoLabel",
+    hintKey: "addressProofPhotoHint",
+  },
+  { slot: "selfie", labelKey: "selfieLabel", hintKey: "selfieHint", facing: "user" },
+  { slot: "pan", labelKey: "panLabel", hintKey: "panHint", optional: true },
+];
+
 function HubKycStep({
   bookingId,
   actionRequired,
@@ -629,21 +651,36 @@ function HubKycStep({
   onDone: () => void;
 }) {
   const { t } = useLanguage();
-  const [selfiePath, setSelfiePath] = useState<string | null>(null);
-  const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
-  const [dlBackPath, setDlBackPath] = useState<string | null>(null);
-  const [addressProofPath, setAddressProofPath] = useState<string | null>(null);
+  const saved = useQuery({ queryKey: ["saved-docs"], queryFn: () => getSavedDocuments() });
+  const [docs, setDocs] = useState<Record<string, string | null>>({});
+  const [index, setIndex] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (!saved.data || hydrated) return;
+    setDocs({ ...saved.data });
+    const firstMissing = KYC_DOC_STEPS.findIndex(
+      (step) => !step.optional && !saved.data[step.slot],
+    );
+    setIndex(firstMissing === -1 ? KYC_DOC_STEPS.length - 1 : firstMissing);
+    setHydrated(true);
+  }, [saved.data, hydrated]);
+
+  const remember = useMutation({
+    mutationFn: (input: { docType: string; path: string }) => saveDocument({ data: input }),
+  });
 
   const submit = useMutation({
     mutationFn: () =>
       submitHubKyc({
         data: {
           bookingId,
-          selfieCaptured: Boolean(selfiePath),
-          selfiePath,
-          dlFrontPath,
-          dlBackPath,
-          addressProofPath,
+          selfieCaptured: Boolean(docs["selfie"]),
+          selfiePath: docs["selfie"] ?? null,
+          dlFrontPath: docs["dl-front"] ?? null,
+          dlBackPath: docs["dl-back"] ?? null,
+          addressProofPath: docs["address-proof"] ?? null,
+          panPath: docs["pan"] ?? null,
         },
       }),
     onSuccess: (data) => {
@@ -658,6 +695,30 @@ function HubKycStep({
       toast.error(error instanceof Error ? error.message : t("kycSubmitFailed")),
   });
 
+  if (saved.isLoading && !hydrated) {
+    return (
+      <StepCard
+        icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
+        title={t("kycTitle")}
+        body={<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+      />
+    );
+  }
+
+  const step = KYC_DOC_STEPS[index];
+  const total = KYC_DOC_STEPS.length;
+  const value = docs[step.slot] ?? null;
+  const isLast = index === total - 1;
+  const requiredDone = KYC_DOC_STEPS.every(
+    (item) => item.optional || Boolean(docs[item.slot]),
+  );
+  const wasSavedEarlier = Boolean(saved.data?.[step.slot]) && docs[step.slot] === saved.data?.[step.slot];
+
+  function setPath(path: string | null) {
+    setDocs((old) => ({ ...old, [step.slot]: path }));
+    if (path) remember.mutate({ docType: step.slot, path });
+  }
+
   return (
     <StepCard
       icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
@@ -669,62 +730,84 @@ function HubKycStep({
               {actionRequired}
             </p>
           )}
-          <p className="text-sm text-muted-foreground">{t("kycHint")}</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <CaptureField
-              bookingId={bookingId}
-              slot="dl-front"
-              label={t("dlFrontLabel")}
-              hint={t("dlFrontHint")}
-              value={dlFrontPath}
-              onChange={setDlFrontPath}
-            />
-            <CaptureField
-              bookingId={bookingId}
-              slot="dl-back"
-              label={t("dlBackLabel")}
-              hint={t("dlBackHint")}
-              value={dlBackPath}
-              onChange={setDlBackPath}
-            />
-            <CaptureField
-              bookingId={bookingId}
-              slot="address-proof"
-              label={t("addressProofPhotoLabel")}
-              hint={t("addressProofPhotoHint")}
-              value={addressProofPath}
-              onChange={setAddressProofPath}
-            />
-            <CaptureField
-              bookingId={bookingId}
-              slot="selfie"
-              label={t("selfieLabel")}
-              hint={t("selfieHint")}
-              facing="user"
-              value={selfiePath}
-              onChange={setSelfiePath}
-            />
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">
+              {t("docStepProgress", { step: index + 1, total })}
+            </Badge>
+            <span className="text-xs text-muted-foreground">{t("docStepOneAtATime")}</span>
           </div>
-          {(!dlFrontPath || !dlBackPath || !addressProofPath || !selfiePath) && (
-            <p className="text-xs text-muted-foreground">{t("docsPending")}</p>
+          <div className="flex gap-1.5">
+            {KYC_DOC_STEPS.map((item, position) => (
+              <span
+                key={item.slot}
+                className={
+                  "h-1.5 flex-1 rounded-full " +
+                  (docs[item.slot]
+                    ? "bg-primary"
+                    : position === index
+                      ? "bg-primary/40"
+                      : "bg-border")
+                }
+              />
+            ))}
+          </div>
+          {wasSavedEarlier && (
+            <p className="text-xs font-medium text-primary">{t("savedEarlier")}</p>
           )}
+          <CaptureField
+            key={step.slot}
+            bookingId={bookingId}
+            slot={step.slot}
+            label={t(step.labelKey)}
+            hint={t(step.hintKey)}
+            facing={step.facing ?? "environment"}
+            value={value}
+            onChange={setPath}
+          />
         </div>
       }
       action={
-        <Button
-          className="w-full sm:w-auto"
-          onClick={() => submit.mutate()}
-          disabled={
-            submit.isPending ||
-            !dlFrontPath ||
-            !dlBackPath ||
-            !addressProofPath ||
-            !selfiePath
-          }
-        >
-          {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {t("submitDocuments")}
-        </Button>
+        <div className="flex w-full flex-col gap-2 sm:flex-row">
+          {index > 0 && (
+            <Button
+              variant="ghost"
+              className="w-full sm:w-auto"
+              onClick={() => setIndex((old) => Math.max(0, old - 1))}
+            >
+              {t("backToBikes") === "" ? "" : "←"}
+            </Button>
+          )}
+          {!isLast ? (
+            <Button
+              className="w-full sm:flex-1"
+              onClick={() => setIndex((old) => Math.min(total - 1, old + 1))}
+              disabled={!value && !step.optional}
+            >
+              {t("continueLabel")}
+            </Button>
+          ) : (
+            <Button
+              className="w-full sm:flex-1"
+              onClick={() => submit.mutate()}
+              disabled={submit.isPending || !requiredDone}
+            >
+              {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("submitDocuments")}
+            </Button>
+          )}
+          {step.optional && !isLast && (
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => setIndex((old) => Math.min(total - 1, old + 1))}
+            >
+              {t("skipForNow")}
+            </Button>
+          )}
+          {step.optional && isLast && !value && (
+            <p className="self-center text-xs text-muted-foreground">{t("panHint")}</p>
+          )}
+        </div>
       }
     />
   );
