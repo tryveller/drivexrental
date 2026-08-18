@@ -192,16 +192,34 @@ function Discovery() {
         </section>
       ) : null}
 
-      <section className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">{t("compareHint")}</h1>
-        <button
-          type="button"
-          onClick={clearLocation}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/40 bg-card/70 px-3 py-1.5 text-xs font-medium backdrop-blur"
-        >
-          <MapPin className="h-3.5 w-3.5 text-primary" />
-          {locationLabel}
-        </button>
+      {/* Your area and the hub distance sit in one block so they read as one fact. */}
+      <section className="rounded-2xl border border-primary/30 bg-card/70 p-3 backdrop-blur">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15">
+            <MapPin className="h-4 w-4 text-primary" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">{locationLabel}</p>
+            {hub ? (
+              <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                <Navigation className="h-3 w-3 shrink-0 text-primary" />
+                {hub.distance !== null
+                  ? `${t("hubNamed", { locality: hub.locality })} · ${t("hubDistanceAway", { km: hub.distance })}`
+                  : t("hubNamed", { locality: hub.locality })}
+              </p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={clearLocation}
+            className="shrink-0 text-[11px] font-semibold text-primary underline"
+          >
+            {t("changeLocation")}
+          </button>
+        </div>
+        <p className="mt-2 border-t border-primary/15 pt-2 text-[11px] text-muted-foreground">
+          {t("compareHint")}
+        </p>
       </section>
 
       <section className="mt-4">
@@ -231,16 +249,6 @@ function Discovery() {
             );
           }}
         />
-        {bikes[0] ? (
-          <p className="mt-2 text-center text-[11px] text-muted-foreground">
-            {bikes[0].hub?.distance !== null && bikes[0].hub
-              ? t("kmFromYou", {
-                  km: bikes[0].hub.distance ?? 0,
-                  place: location?.pinCode || locationLabel,
-                })
-              : t("allChecked")}
-          </p>
-        ) : null}
       </section>
 
       {hub && (
