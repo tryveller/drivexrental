@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const BOOKING_SELECT =
-  "id, booking_code, status, hub_id, model_id, plan_id, vehicle_id, reservation_expires_at, travel_mode, rapido_coupon, checked_in_at, agreement_accepted_at, handover_confirmed_at, rejection_reason, created_at, pickup_on, pickup_slot, dropoff_on, dropoff_slot, billed_days, billed_extra_hours, quoted_total, pickup_change_count, original_pickup_on";
+  "id, booking_code, status, hub_id, model_id, plan_id, vehicle_id, reservation_expires_at, travel_mode, rapido_coupon, checked_in_at, agreement_accepted_at, handover_confirmed_at, rejection_reason, created_at, pickup_on, pickup_slot, dropoff_on, dropoff_slot, billed_days, billed_extra_hours, quoted_total, pickup_change_count, original_pickup_on, extra_helmet_mode, extra_helmet_amount";
 
 const LOCKED_STATUSES = [
   "RESERVED",
@@ -29,16 +29,19 @@ export const createBooking = createServerFn({ method: "POST" })
       pickupSlot?: string;
       dropoffOn?: string;
       dropoffSlot?: string;
+      extraHelmet?: string;
     }) => input,
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
-    const { buildQuote, computeDuration, isSlotKey } = await import("./pricing");
+    const { addonRates, buildQuote, computeDuration, isHelmetMode, isSlotKey } =
+      await import("./pricing");
 
     // The server owns the quote: dates come from the rider, amounts never do.
     const pickupSlot = isSlotKey(data.pickupSlot) ? data.pickupSlot : "MORNING";
     const dropoffSlot = isSlotKey(data.dropoffSlot) ? data.dropoffSlot : "EVENING";
+    const helmetMode = isHelmetMode(data.extraHelmet) ? data.extraHelmet : "NONE";
     const duration = computeDuration(
       data.pickupOn ?? null,
       pickupSlot,
@@ -46,17 +49,23 @@ export const createBooking = createServerFn({ method: "POST" })
       dropoffSlot,
     );
 
-    let dateFields: Record<string, unknown> = {};
+    // Helmet rates and plan amounts both come from the database.
+    const [{ data: plan }, { data: addonRows }] = await Promise.all([
+      supabaseAdmin.from("plans").select("*").eq("id", data.planId).single(),
+      supabaseAdmin.from("addon_pricing").select("code, amount").eq("is_active", true),
+    ]);
+    const helmet = { mode: helmetMode, rates: addonRates(addonRows) };
+    const quote = plan
+      ? buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, helmet)
+      : null;
+
+    let dateFields: Record<string, unknown> = {
+      extra_helmet_mode: helmetMode,
+      extra_helmet_amount: quote?.helmetAmount ?? 0,
+    };
     if (duration && data.pickupOn && data.dropoffOn) {
-      const { data: plan } = await supabaseAdmin
-        .from("plans")
-        .select("*")
-        .eq("id", data.planId)
-        .single();
-      const quote = plan
-        ? buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration)
-        : null;
       dateFields = {
+        ...dateFields,
         pickup_on: data.pickupOn,
         pickup_slot: pickupSlot,
         dropoff_on: data.dropoffOn,
@@ -168,6 +177,69 @@ export const getJourney = createServerFn({ method: "GET" })
       rental: rental.data,
       customer,
     };
+  });
+
+const HELMET_EDITABLE_STATUSES = [
+  "OTP_VERIFIED",
+  "ELIGIBILITY_STARTED",
+  "ELIGIBILITY_COMPLETED",
+  "ELIGIBILITY_SKIPPED",
+  "PAYMENT_PENDING",
+  "RESERVED",
+  "TRAVEL_TO_HUB",
+  "AT_HUB",
+  "KYC_IN_PROGRESS",
+  "APPROVED",
+  "FINAL_PAYMENT_PENDING",
+];
+
+/** Riders may still add or drop the extra helmet at the hub, until payment. */
+export const setExtraHelmet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookingId: string; mode: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { addonRates, buildQuote, computeDuration, isHelmetMode } = await import("./pricing");
+    const mode = isHelmetMode(data.mode) ? data.mode : "NONE";
+
+    const { data: booking } = await supabaseAdmin
+      .from("bookings")
+      .select("id, status, plan_id, pickup_on, pickup_slot, dropoff_on, dropoff_slot")
+      .eq("id", data.bookingId)
+      .eq("customer_id", context.userId)
+      .single();
+    if (!booking) throw new Error("Booking not found");
+    if (!HELMET_EDITABLE_STATUSES.includes(booking.status)) {
+      throw new Error("The helmet choice can no longer be changed for this booking.");
+    }
+
+    const [{ data: plan }, { data: addonRows }] = await Promise.all([
+      supabaseAdmin.from("plans").select("*").eq("id", booking.plan_id).single(),
+      supabaseAdmin.from("addon_pricing").select("code, amount").eq("is_active", true),
+    ]);
+    if (!plan) throw new Error("Plan not found");
+
+    const duration = computeDuration(
+      booking.pickup_on,
+      booking.pickup_slot,
+      booking.dropoff_on,
+      booking.dropoff_slot,
+    );
+    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, {
+      mode,
+      rates: addonRates(addonRows),
+    });
+
+    await supabaseAdmin
+      .from("bookings")
+      .update({
+        extra_helmet_mode: mode,
+        extra_helmet_amount: quote.helmetAmount,
+        ...(booking.pickup_on ? { quoted_total: quote.totalInitialLiability } : {}),
+      })
+      .eq("id", booking.id);
+
+    return { mode, amount: quote.helmetAmount, total: quote.totalInitialLiability };
   });
 
 export const submitEligibility = createServerFn({ method: "POST" })
@@ -518,12 +590,14 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { bookingId: string }) => input)
   .handler(async ({ data, context }) => {
-    const { buildQuote, computeDuration } = await import("./pricing");
+    const { addonRates, buildQuote, computeDuration, isHelmetMode } = await import("./pricing");
     const { supabase } = context;
 
     const { data: booking } = await supabase
       .from("bookings")
-      .select("id, plan_id, pickup_on, pickup_slot, dropoff_on, dropoff_slot")
+      .select(
+        "id, plan_id, pickup_on, pickup_slot, dropoff_on, dropoff_slot, extra_helmet_mode",
+      )
       .eq("id", data.bookingId)
       .single();
     if (!booking) throw new Error("Booking not found");
@@ -540,6 +614,11 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
       .select("amount, entry_type")
       .eq("booking_id", booking.id);
 
+    const { data: addonRows } = await supabase
+      .from("addon_pricing")
+      .select("code, amount")
+      .eq("is_active", true);
+
     const reservationCredit = (ledger ?? [])
       .filter((row) => row.entry_type === "RESERVATION")
       .reduce((sum, row) => sum + row.amount, 0);
@@ -550,7 +629,10 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
       booking.dropoff_on,
       booking.dropoff_slot,
     );
-    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration);
+    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, {
+      mode: isHelmetMode(booking.extra_helmet_mode) ? booking.extra_helmet_mode : "NONE",
+      rates: addonRates(addonRows),
+    });
     return {
       lines: quote.atHub,
       reservationCredit,
@@ -559,6 +641,8 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
       days: quote.days,
       extraHours: quote.extraHours,
       perDay: quote.perDay,
+      helmetAmount: quote.helmetAmount,
+      helmetMode: isHelmetMode(booking.extra_helmet_mode) ? booking.extra_helmet_mode : "NONE",
     };
   });
 
@@ -568,11 +652,13 @@ export const payFinalAmount = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
-    const { buildQuote, computeDuration } = await import("./pricing");
+    const { addonRates, buildQuote, computeDuration, isHelmetMode } = await import("./pricing");
 
     const { data: booking } = await supabaseAdmin
       .from("bookings")
-      .select("id, plan_id, status, pickup_on, pickup_slot, dropoff_on, dropoff_slot")
+      .select(
+        "id, plan_id, status, pickup_on, pickup_slot, dropoff_on, dropoff_slot, extra_helmet_mode",
+      )
       .eq("id", data.bookingId)
       .eq("customer_id", context.userId)
       .single();
@@ -590,6 +676,11 @@ export const payFinalAmount = createServerFn({ method: "POST" })
       .select("amount, entry_type")
       .eq("booking_id", booking.id);
 
+    const { data: addonRows } = await supabaseAdmin
+      .from("addon_pricing")
+      .select("code, amount")
+      .eq("is_active", true);
+
     const reservationCredit = (ledger ?? [])
       .filter((row) => row.entry_type === "RESERVATION")
       .reduce((sum, row) => sum + row.amount, 0);
@@ -603,7 +694,13 @@ export const payFinalAmount = createServerFn({ method: "POST" })
       booking.dropoff_on,
       booking.dropoff_slot,
     );
-    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration);
+    const helmetMode = isHelmetMode(booking.extra_helmet_mode)
+      ? booking.extra_helmet_mode
+      : "NONE";
+    const quote = buildQuote({ ...plan, extra_km_rate: Number(plan.extra_km_rate) }, duration, {
+      mode: helmetMode,
+      rates: addonRates(addonRows),
+    });
     const amountDue = quote.totalInitialLiability - reservationCredit;
 
     if (alreadySettled) {
@@ -680,6 +777,14 @@ export const payFinalAmount = createServerFn({ method: "POST" })
           amount: plan.deposit_amount,
           note: "Refundable security deposit",
         });
+    }
+
+    if (quote.helmetAmount > 0) {
+      entries.push({
+        entry_type: "HELMET",
+        amount: quote.helmetAmount,
+        note: helmetMode === "BUY" ? "Extra helmet purchase" : "Extra helmet rental",
+      });
     }
 
     await supabaseAdmin.from("payment_ledger").insert(

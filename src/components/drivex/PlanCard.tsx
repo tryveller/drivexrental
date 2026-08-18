@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, ShieldCheck } from "lucide-react";
 import type { CatalogPlan } from "@/lib/catalog.functions";
 import { buildQuote, planDayRate } from "@/lib/pricing";
 import { rupees } from "@/lib/format";
@@ -91,6 +91,11 @@ export function PlanCard({
 
       <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
         {t("reserveHoldNote", { reserve: rupees(plan.reservation_amount) })}
+      </p>
+
+      <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-primary">
+        <ShieldCheck className="h-3.5 w-3.5" />
+        {t("helmetIncluded")}
       </p>
     </button>
   );

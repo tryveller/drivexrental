@@ -1,0 +1,1 @@
+ALTER TYPE public.ledger_entry_type ADD VALUE IF NOT EXISTS 'HELMET';
