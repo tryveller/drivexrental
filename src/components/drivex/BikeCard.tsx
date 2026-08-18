@@ -1,4 +1,4 @@
-import { Fuel, Gauge, MapPin, Navigation, Package, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
+import { Fuel, Gauge, MapPin, Navigation, Package, Power, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
 import type { CatalogModel, CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore } from "@/lib/pricing";
 import { bikeSpec } from "@/lib/bike-specs";
@@ -85,10 +85,11 @@ export function BikeCard({
           : t("storageNone"),
     },
     {
-      icon: ShieldCheck,
-      label: t("specSafety"),
-      value: t(spec.safetyKey as never),
+      icon: Power,
+      label: t("specStartType"),
+      value: t(spec.startKey as never),
     },
+
   ];
 
   return (

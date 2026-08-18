@@ -11,7 +11,9 @@ export type SpecSource = {
   kerb_weight_kg?: number | null;
   safety_key?: string | null;
   best_for_key?: string | null;
+  start_type?: string | null;
 };
+
 
 export type BikeSpec = {
   /** Fuel economy in kmpl, or null for electric models. */
@@ -26,7 +28,10 @@ export type BikeSpec = {
   safetyKey: string;
   /** Who this model suits best, as a copy key. */
   bestForKey: string;
+  /** Engine start type: kick, electric or both. */
+  startKey: string;
 };
+
 
 const FALLBACK: BikeSpec = {
   mileageKmpl: 60,
@@ -36,7 +41,9 @@ const FALLBACK: BikeSpec = {
   kerbWeightKg: 110,
   safetyKey: "safetySbtTubeless",
   bestForKey: "bestForCommute",
+  startKey: "startTypeBoth",
 };
+
 
 export function bikeSpec(model: SpecSource): BikeSpec {
   const hasRange = model.range_km !== null && model.range_km !== undefined;
@@ -48,8 +55,21 @@ export function bikeSpec(model: SpecSource): BikeSpec {
     kerbWeightKg: model.kerb_weight_kg ?? FALLBACK.kerbWeightKg,
     safetyKey: model.safety_key ?? FALLBACK.safetyKey,
     bestForKey: model.best_for_key ?? FALLBACK.bestForKey,
+    startKey: (() => {
+      switch (model.start_type?.toUpperCase()) {
+        case "KICK":
+          return "startTypeKick";
+        case "ELECTRIC":
+          return "startTypeElectric";
+        case "BOTH":
+          return "startTypeBoth";
+        default:
+          return FALLBACK.startKey;
+      }
+    })(),
   };
 }
+
 
 /**
  * "Best in class" badges, computed across only the models actually on offer at

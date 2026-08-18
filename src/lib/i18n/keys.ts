@@ -3096,7 +3096,20 @@ export const COPY = {
     hi: "सिर्फ बैग हुक",
     en: "Bag hook only",
   },
+  specStartType: {
+    en: "Start",
+  },
+  startTypeKick: {
+    en: "Kick start",
+  },
+  startTypeElectric: {
+    en: "Electric start",
+  },
+  startTypeBoth: {
+    en: "Kick + electric",
+  },
   safetySbtTubeless: {
+
     ne: "दुवै ब्रेक एकै साथ, ट्युबलेस टायर",
     "or": "ଦୁଇଟିଯାକ ବ୍ରେକ୍ ଏକାସାଥେ, ଟ୍ୟୁବଲେସ୍ ଟାୟର୍",
     ml: "രണ്ട് ബ്രേക്കുകളും ഒരുമിച്ച്, ട്യൂബ്‌ലെസ് ടയറുകൾ",

@@ -46,7 +46,9 @@ export type CatalogModel = {
   kerb_weight_kg: number | null;
   safety_key: string;
   best_for_key: string;
+  start_type: string;
 };
+
 
 export type CatalogInventory = {
   hub_id: string;
@@ -84,8 +86,9 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
     supabase
       .from("vehicle_models")
       .select(
-        "id, brand, name, fuel_type, engine, transmission, features, mileage_kmpl, range_km, top_speed_kmph, storage_litres, kerb_weight_kg, safety_key, best_for_key",
+        "id, brand, name, fuel_type, engine, transmission, features, mileage_kmpl, range_km, top_speed_kmph, storage_litres, kerb_weight_kg, safety_key, best_for_key, start_type",
       )
+
       .eq("is_active", true),
     supabase
       .from("plans")
