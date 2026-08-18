@@ -274,33 +274,12 @@ function JourneyPage() {
         )}
 
         {step === "RESERVE" && plan && quote && (
-          <StepCard
-            icon={<Wallet className="h-5 w-5 text-primary" />}
-            title={t("reserveTitle", { amount: rupees(plan.reservation_amount) })}
-            body={
-              <>
-                <p className="text-sm text-muted-foreground">
-                  {t("reserveBody", {
-                    total: rupees(quote.totalInitialLiability),
-                    remaining: rupees(quote.amountAtHub),
-                  })}
-                </p>
-                <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-                  {quote.atHub.map((line) => (
-                    <li key={line.labelKey}>
-                      {t(line.labelKey as TKey, line.labelVars)}: {rupees(line.amount)}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            }
-            action={
-              <ActionButton
-                label={t("payAndReserve", { amount: rupees(plan.reservation_amount) })}
-                run={() => payReservation({ data: { bookingId: booking.id } })}
-                onDone={refresh}
-              />
-            }
+          <ReserveStep
+            bookingId={booking.id}
+            reservationAmount={plan.reservation_amount}
+            quote={quote}
+            verificationDone={booking.status !== "ELIGIBILITY_SKIPPED"}
+            onDone={refresh}
           />
         )}
 
@@ -478,11 +457,13 @@ function ActionButton<T>({
   run,
   onDone,
   variant,
+  disabled,
 }: {
   label: string;
   run: () => Promise<T>;
   onDone: () => void | Promise<void>;
   variant?: "outline";
+  disabled?: boolean;
 }) {
   const { t } = useLanguage();
   const mutation = useMutation({
@@ -504,6 +485,76 @@ function ActionButton<T>({
       {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {label}
     </Button>
+  );
+}
+
+function ReserveStep({
+  bookingId,
+  reservationAmount,
+  quote,
+  verificationDone,
+  onDone,
+}: {
+  bookingId: string;
+  reservationAmount: number;
+  quote: ReturnType<typeof buildQuote>;
+  verificationDone: boolean;
+  onDone: () => void;
+}) {
+  const { t } = useLanguage();
+  // Verification is optional before reserving, so the rider must knowingly
+  // accept that the ₹199 hold is not returned if the hub check does not pass.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  return (
+    <StepCard
+      icon={<Wallet className="h-5 w-5 text-primary" />}
+      title={t("reserveTitle", { amount: rupees(reservationAmount) })}
+      body={
+        <>
+          <p className="text-sm text-muted-foreground">
+            {t("reserveBody", {
+              total: rupees(quote.totalInitialLiability),
+              remaining: rupees(quote.amountAtHub),
+            })}
+          </p>
+          <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+            {quote.atHub.map((line) => (
+              <li key={line.labelKey}>
+                {t(line.labelKey as TKey, line.labelVars)}: {rupees(line.amount)}
+              </li>
+            ))}
+          </ul>
+          {!verificationDone && (
+            <p className="mt-3 flex items-start gap-2 rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
+              <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>{t("hubVerificationRisk")}</span>
+            </p>
+          )}
+          <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
+            <Checkbox
+              checked={acceptedTerms}
+              onCheckedChange={(value) => setAcceptedTerms(value === true)}
+              className="mt-0.5"
+            />
+            <span>{t("reservationTermsConsent")}</span>
+          </label>
+        </>
+      }
+      action={
+        <div className="flex flex-col gap-2">
+          <ActionButton
+            label={t("payAndReserve", { amount: rupees(reservationAmount) })}
+            run={() => payReservation({ data: { bookingId, acceptedTerms } })}
+            onDone={onDone}
+            disabled={!acceptedTerms}
+          />
+          {!acceptedTerms && (
+            <p className="text-xs text-muted-foreground">{t("acceptTermsRequired")}</p>
+          )}
+        </div>
+      }
+    />
   );
 }
 
@@ -567,6 +618,9 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       body={
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">{t("eligibilityHint")}</p>
+          <p className="rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
+            {t("eligibilityOptionalNote")} {t("hubVerificationRisk")}
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <CaptureField
               bookingId={bookingId}
@@ -607,8 +661,14 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
         </div>
       }
       action={
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2 sm:flex-row-reverse sm:justify-start">
+          <ActionButton
+            label={t("reserveNowVerifyAtHub")}
+            run={() => skipEligibility({ data: { bookingId } })}
+            onDone={onDone}
+          />
           <Button
+            variant="outline"
             className="w-full sm:w-auto"
             onClick={() => submit.mutate()}
             disabled={
@@ -621,12 +681,6 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t("checkEligibility")}
           </Button>
-          <ActionButton
-            variant="outline"
-            label={t("skipContinue")}
-            run={() => skipEligibility({ data: { bookingId } })}
-            onDone={onDone}
-          />
         </div>
       }
     />
