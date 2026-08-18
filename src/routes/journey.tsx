@@ -509,11 +509,21 @@ function ActionButton<T>({
 
 function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
   const { t } = useLanguage();
+  const saved = useQuery({ queryKey: ["saved-docs"], queryFn: () => getSavedDocuments() });
   const [selfiePath, setSelfiePath] = useState<string | null>(null);
   const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
   const [dlBackPath, setDlBackPath] = useState<string | null>(null);
+  const [prefilled, setPrefilled] = useState(false);
   const [consent, setConsent] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!saved.data || prefilled) return;
+    setSelfiePath((old) => old ?? saved.data["selfie"] ?? null);
+    setDlFrontPath((old) => old ?? saved.data["dl-front"] ?? null);
+    setDlBackPath((old) => old ?? saved.data["dl-back"] ?? null);
+    setPrefilled(true);
+  }, [saved.data, prefilled]);
 
   const submit = useMutation({
     mutationFn: () =>
@@ -774,7 +784,7 @@ function HubKycStep({
               className="w-full sm:w-auto"
               onClick={() => setIndex((old) => Math.max(0, old - 1))}
             >
-              {t("backToBikes") === "" ? "" : "←"}
+              ←
             </Button>
           )}
           {!isLast ? (
