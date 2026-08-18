@@ -242,7 +242,7 @@ export const setExtraHelmet = createServerFn({ method: "POST" })
     return { mode, amount: quote.helmetAmount, total: quote.totalInitialLiability };
   });
 
-const submitEligibilityLegacy = createServerFn({ method: "POST" })
+export const submitEligibility = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     (input: {
