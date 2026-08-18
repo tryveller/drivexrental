@@ -48,7 +48,7 @@ export function ReservationConfirmed({
     try {
       await onRevealCoupon();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t("somethingWentWrong"));
+      toast.error(error instanceof Error ? error.message : t("couldNotStartBooking"));
     } finally {
       setRevealing(false);
     }
