@@ -600,7 +600,9 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
               onCheckedChange={(value) => setConsent(value === true)}
               className="mt-0.5"
             />
-            <span>{t("eligibilityConsent")}</span>
+            <span>
+              {t("eligibilityConsent")} {t("documentConsent")}
+            </span>
           </label>
         </div>
       }
@@ -665,6 +667,7 @@ function HubKycStep({
   const [docs, setDocs] = useState<Record<string, string | null>>({});
   const [index, setIndex] = useState(0);
   const [hydrated, setHydrated] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   useEffect(() => {
     if (!saved.data || hydrated) return;
@@ -685,6 +688,7 @@ function HubKycStep({
       submitHubKyc({
         data: {
           bookingId,
+          consent,
           selfieCaptured: Boolean(docs["selfie"]),
           selfiePath: docs["selfie"] ?? null,
           dlFrontPath: docs["dl-front"] ?? null,
@@ -764,6 +768,16 @@ function HubKycStep({
           {wasSavedEarlier && (
             <p className="text-xs font-medium text-primary">{t("savedEarlier")}</p>
           )}
+          {isLast && (
+            <label className="flex items-start gap-2 rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={consent}
+                onCheckedChange={(next) => setConsent(next === true)}
+                className="mt-0.5"
+              />
+              <span>{t("documentConsent")}</span>
+            </label>
+          )}
           <CaptureField
             key={step.slot}
             bookingId={bookingId}
@@ -799,7 +813,7 @@ function HubKycStep({
             <Button
               className="w-full sm:flex-1"
               onClick={() => submit.mutate()}
-              disabled={submit.isPending || !requiredDone}
+              disabled={submit.isPending || !requiredDone || !consent}
             >
               {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("submitDocuments")}
@@ -814,8 +828,8 @@ function HubKycStep({
               {t("skipForNow")}
             </Button>
           )}
-          {step.optional && isLast && !value && (
-            <p className="self-center text-xs text-muted-foreground">{t("panHint")}</p>
+          {isLast && !consent && (
+            <p className="self-center text-xs text-muted-foreground">{t("consentRequired")}</p>
           )}
         </div>
       }
