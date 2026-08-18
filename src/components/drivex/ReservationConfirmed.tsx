@@ -3,6 +3,8 @@ import { BatteryWarning, CheckCircle2, Clock3, IndianRupee, MapPin, Ticket } fro
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { BookingQr } from "@/components/drivex/BookingQr";
+import { kioskLink, whatsappBookingLink } from "@/lib/booking-share";
 import { rupees } from "@/lib/format";
 import { useLanguage, type TKey } from "@/lib/i18n";
 
@@ -80,6 +82,30 @@ export function ReservationConfirmed({
             {t("amountDueAtHub", { amount: rupees(amountAtHub) })}
           </p>
         )}
+
+        <div className="flex items-center gap-4 rounded-xl border border-border p-3">
+          <BookingQr value={kioskLink(bookingCode)} size={104} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">{t("bookingQrTitle")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("bookingQrBody")}</p>
+            <Button asChild variant="outline" size="sm" className="mt-2">
+              <a
+                href={whatsappBookingLink(
+                  t("whatsappBookingMessage", {
+                    code: bookingCode,
+                    model: modelName,
+                    hub: hubName ?? "",
+                    link: kioskLink(bookingCode),
+                  }),
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("shareOnWhatsApp")}
+              </a>
+            </Button>
+          </div>
+        </div>
 
         <div className="rounded-xl border border-dashed border-primary/40 p-3">
           <div className="flex items-center gap-2">
