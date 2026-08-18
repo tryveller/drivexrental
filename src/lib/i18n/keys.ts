@@ -1292,6 +1292,51 @@ export const COPY = {
     hi: "आपकी बाइक {date} तक आपके लिए आरक्षित है।",
     en: "Your bike is held for you until {date}.",
   },
+  reservationConfirmedTitle: {
+    en: "Reservation confirmed",
+  },
+  reservationConfirmedBody: {
+    en: "{amount} paid. Your {model} is held for you.",
+  },
+  amountDueAtHub: {
+    en: "{amount} is payable at the hub before you ride away.",
+  },
+  rapidoDropTitle: {
+    en: "Ride to the hub with Rapido",
+  },
+  rapidoDropBody: {
+    en: "Show this coupon in Rapido and get dropped at the hub.",
+  },
+  showRapidoCoupon: {
+    en: "Show Rapido coupon",
+  },
+  copyCoupon: {
+    en: "Copy coupon",
+  },
+  couponCopied: {
+    en: "Coupon copied",
+  },
+  openRapido: {
+    en: "Open Rapido",
+  },
+  beforeYouRideTitle: {
+    en: "Before you ride",
+  },
+  expectRemoteStop: {
+    en: "The bike can be switched off remotely if it goes outside the permitted area or a payment is overdue.",
+  },
+  expectInformExtension: {
+    en: "Keeping the bike longer? You must tell us in the app before your drop-off time.",
+  },
+  expectProRata: {
+    en: "Extra usage is charged pro rata at your plan rate.",
+  },
+  expectDropoffCharges: {
+    en: "Extra charges are collected at drop-off or adjusted from your security deposit.",
+  },
+  expectHelmetReturn: {
+    en: "One helmet comes free with the bike and must be returned with it.",
+  },
   reserveTitle: {
     ne: "यो बाइक {amount} मा रिजर्भ गर्नुहोस्",
     "or": "ଏହି ବାଇକକୁ {amount} ରେ ରିଜର୍ଭ କରନ୍ତୁ",
