@@ -14,6 +14,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as EligibilityRouteImport } from './routes/eligibility'
 import { Route as JourneyRouteImport } from './routes/journey'
+import { Route as KioskRouteImport } from './routes/kiosk'
 import { Route as MyBikeRouteImport } from './routes/my-bike'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const JourneyRoute = JourneyRouteImport.update({
   path: '/journey',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KioskRoute = KioskRouteImport.update({
+  id: '/kiosk',
+  path: '/kiosk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MyBikeRoute = MyBikeRouteImport.update({
   id: '/my-bike',
   path: '/my-bike',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/eligibility': typeof EligibilityRoute
   '/journey': typeof JourneyRoute
+  '/kiosk': typeof KioskRoute
   '/my-bike': typeof MyBikeRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/eligibility': typeof EligibilityRoute
   '/journey': typeof JourneyRoute
+  '/kiosk': typeof KioskRoute
   '/my-bike': typeof MyBikeRoute
 }
 export interface FileRoutesById {
@@ -70,14 +78,28 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/eligibility': typeof EligibilityRoute
   '/journey': typeof JourneyRoute
+  '/kiosk': typeof KioskRoute
   '/my-bike': typeof MyBikeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/account' | '/auth' | '/eligibility' | '/journey' | '/my-bike'
+    | '/'
+    | '/account'
+    | '/auth'
+    | '/eligibility'
+    | '/journey'
+    | '/kiosk'
+    | '/my-bike'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/account' | '/auth' | '/eligibility' | '/journey' | '/my-bike'
+  to:
+    | '/'
+    | '/account'
+    | '/auth'
+    | '/eligibility'
+    | '/journey'
+    | '/kiosk'
+    | '/my-bike'
   id:
     | '__root__'
     | '/'
@@ -85,6 +107,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/eligibility'
     | '/journey'
+    | '/kiosk'
     | '/my-bike'
   fileRoutesById: FileRoutesById
 }
@@ -94,6 +117,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   EligibilityRoute: typeof EligibilityRoute
   JourneyRoute: typeof JourneyRoute
+  KioskRoute: typeof KioskRoute
   MyBikeRoute: typeof MyBikeRoute
 }
 
@@ -134,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JourneyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kiosk': {
+      id: '/kiosk'
+      path: '/kiosk'
+      fullPath: '/kiosk'
+      preLoaderRoute: typeof KioskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/my-bike': {
       id: '/my-bike'
       path: '/my-bike'
@@ -150,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   EligibilityRoute: EligibilityRoute,
   JourneyRoute: JourneyRoute,
+  KioskRoute: KioskRoute,
   MyBikeRoute: MyBikeRoute,
 }
 export const routeTree = rootRouteImport
