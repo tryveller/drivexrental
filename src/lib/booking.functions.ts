@@ -821,10 +821,19 @@ export const getFinalPaymentBreakdown = createServerFn({ method: "POST" })
       mode: isHelmetMode(booking.extra_helmet_mode) ? booking.extra_helmet_mode : "NONE",
       rates: addonRates(addonRows),
     });
+
+    // Money left in the wallet — usually a previous security deposit — is
+    // applied first, which is what makes the second checkout quick.
+    const { readProfile } = await import("./profile.server");
+    const profile = await readProfile(supabase, context.userId);
+    const dueAfterReservation = quote.totalInitialLiability - reservationCredit;
+    const walletCredit = Math.min(profile?.wallet_balance ?? 0, Math.max(0, dueAfterReservation));
     return {
       lines: quote.atHub,
       reservationCredit,
-      amountDue: quote.totalInitialLiability - reservationCredit,
+      walletCredit,
+      walletBalance: profile?.wallet_balance ?? 0,
+      amountDue: dueAfterReservation - walletCredit,
       totalInitialLiability: quote.totalInitialLiability,
       days: quote.days,
       extraHours: quote.extraHours,
@@ -889,7 +898,11 @@ export const payFinalAmount = createServerFn({ method: "POST" })
       mode: helmetMode,
       rates: addonRates(addonRows),
     });
-    const amountDue = quote.totalInitialLiability - reservationCredit;
+    const { moveWallet, profileIdFor, readProfile } = await import("./profile.server");
+    const profile = await readProfile(supabaseAdmin, context.userId);
+    const dueAfterReservation = quote.totalInitialLiability - reservationCredit;
+    const walletCredit = Math.min(profile?.wallet_balance ?? 0, Math.max(0, dueAfterReservation));
+    const amountDue = dueAfterReservation - walletCredit;
 
     if (alreadySettled) {
       await supabaseAdmin.from("bookings").update({ status: "PAID" }).eq("id", booking.id);
@@ -918,6 +931,20 @@ export const payFinalAmount = createServerFn({ method: "POST" })
     if (data.simulateFailure) {
       await supabaseAdmin.from("payments").update({ status: "FAILED" }).eq("id", payment.id);
       return { status: "FAILED" as const, amount: amountDue };
+    }
+
+    if (walletCredit > 0) {
+      const profileId = await profileIdFor(supabaseAdmin, context.userId);
+      if (profileId) {
+        await moveWallet(supabaseAdmin, {
+          profileId,
+          customerId: context.userId,
+          bookingId: booking.id,
+          entryType: "CHECKOUT_APPLIED",
+          amount: walletCredit,
+          note: "Wallet balance used for this booking",
+        });
+      }
     }
 
     await supabaseAdmin
