@@ -40,6 +40,16 @@ export function defaultDates(): RideDates {
   };
 }
 
+/** Push the drop-off out so the chosen plan's minimum duration is satisfied. */
+export function withMinDuration(dates: RideDates, minDays: number): RideDates {
+  const pickup = new Date(`${dates.pickupOn}T00:00:00`);
+  const earliest = new Date(pickup);
+  earliest.setDate(earliest.getDate() + Math.max(1, minDays));
+  const dropoff = new Date(`${dates.dropoffOn}T00:00:00`);
+  if (dropoff.getTime() >= earliest.getTime()) return dates;
+  return { ...dates, dropoffOn: earliest.toISOString().slice(0, 10) };
+}
+
 function SlotRow({
   value,
   onChange,
