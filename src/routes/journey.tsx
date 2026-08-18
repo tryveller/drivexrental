@@ -715,7 +715,7 @@ function HubKycStep({
     );
   }
 
-  const step = KYC_DOC_STEPS[index];
+  const step = KYC_DOC_STEPS[index] ?? KYC_DOC_STEPS[0]!;
   const total = KYC_DOC_STEPS.length;
   const value = docs[step.slot] ?? null;
   const isLast = index === total - 1;
