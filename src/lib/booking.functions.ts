@@ -96,7 +96,7 @@ export const createBooking = createServerFn({ method: "POST" })
 
     const current = open?.[0];
     if (current && LOCKED_STATUSES.includes(current.status)) {
-      return { bookingId: current.id, existing: true };
+      return { bookingId: current.id, existing: true, existingStatus: current.status };
     }
 
     if (current) {
@@ -113,7 +113,7 @@ export const createBooking = createServerFn({ method: "POST" })
         .select("id")
         .single();
       if (error) throw new Error(error.message);
-      return { bookingId: updated.id, existing: false };
+      return { bookingId: updated.id, existing: false, existingStatus: null };
     }
 
     const { data: inserted, error } = await supabaseAdmin
@@ -135,7 +135,7 @@ export const createBooking = createServerFn({ method: "POST" })
       { planId: data.planId },
       { customerId: context.userId, bookingId: inserted.id },
     );
-    return { bookingId: inserted.id, existing: false };
+    return { bookingId: inserted.id, existing: false, existingStatus: null };
   });
 
 export const getJourney = createServerFn({ method: "GET" })
