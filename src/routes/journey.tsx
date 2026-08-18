@@ -18,7 +18,6 @@ import { PageLoader } from "@/components/drivex/PageLoader";
 import { CaptureField } from "@/components/drivex/CaptureField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useRiderSession } from "@/hooks/useRiderSession";
