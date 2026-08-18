@@ -23,31 +23,24 @@ export type RideDates = {
   dropoffSlot: string;
 };
 
-export function todayIso(): string {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
+export { todayIso } from "@/lib/pricing";
 
 export function defaultDates(): RideDates {
   const today = todayIso();
-  const tomorrow = new Date(`${today}T00:00:00`);
-  tomorrow.setDate(tomorrow.getDate() + 1);
   return {
     pickupOn: today,
     pickupSlot: "MORNING",
-    dropoffOn: tomorrow.toISOString().slice(0, 10),
+    dropoffOn: addDaysIso(today, 1),
     dropoffSlot: "EVENING",
   };
 }
 
 /** Push the drop-off out so the chosen plan's minimum duration is satisfied. */
 export function withMinDuration(dates: RideDates, minDays: number): RideDates {
-  const pickup = new Date(`${dates.pickupOn}T00:00:00`);
-  const earliest = new Date(pickup);
-  earliest.setDate(earliest.getDate() + Math.max(1, minDays));
-  const dropoff = new Date(`${dates.dropoffOn}T00:00:00`);
-  if (dropoff.getTime() >= earliest.getTime()) return dates;
-  return { ...dates, dropoffOn: earliest.toISOString().slice(0, 10) };
+  const earliest = addDaysIso(dates.pickupOn, Math.max(1, minDays));
+  return daysBetweenIso(dates.dropoffOn, earliest) > 0
+    ? { ...dates, dropoffOn: earliest }
+    : dates;
 }
 
 function SlotRow({
