@@ -356,6 +356,7 @@ function JourneyPage() {
         {step === "KYC" && (
           <HubKycStep
             bookingId={booking.id}
+            savedVerification={journey.data?.profile?.kycReusable ?? false}
             actionRequired={kyc?.status === "ACTION_REQUIRED" ? kyc.action_required_reason : null}
             onDone={refresh}
           />
@@ -716,10 +717,12 @@ const KYC_DOC_STEPS: KycDocStep[] = [
 
 function HubKycStep({
   bookingId,
+  savedVerification,
   actionRequired,
   onDone,
 }: {
   bookingId: string;
+  savedVerification: boolean;
   actionRequired: string | null;
   onDone: () => void;
 }) {
@@ -769,6 +772,33 @@ function HubKycStep({
     onError: (error: unknown) =>
       toast.error(error instanceof Error ? error.message : t("kycSubmitFailed")),
   });
+
+  const reuse = useMutation({
+    mutationFn: () => reuseSavedKyc({ data: { bookingId } }),
+    onSuccess: () => {
+      toast.success(t("kycVerified"));
+      onDone();
+    },
+    onError: (error: unknown) =>
+      toast.error(error instanceof Error ? error.message : t("kycSubmitFailed")),
+  });
+
+  // A rider who is already verified never repeats the document wizard.
+  if (savedVerification && !actionRequired) {
+    return (
+      <StepCard
+        icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
+        title={t("kycReuseTitle")}
+        body={<p className="text-sm text-muted-foreground">{t("kycReuseBody")}</p>}
+        action={
+          <Button className="w-full" onClick={() => reuse.mutate()} disabled={reuse.isPending}>
+            {reuse.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t("kycReuseAction")}
+          </Button>
+        }
+      />
+    );
+  }
 
   if (saved.isLoading && !hydrated) {
     return (
