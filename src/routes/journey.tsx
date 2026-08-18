@@ -54,6 +54,7 @@ import {
   type RideDuration,
 } from "@/lib/pricing";
 import { HelmetPicker } from "@/components/drivex/HelmetPicker";
+import { ReservationConfirmed } from "@/components/drivex/ReservationConfirmed";
 import { longDate, modelTitle, rupees } from "@/lib/format";
 import { useLanguage, type TKey } from "@/lib/i18n";
 
@@ -269,6 +270,22 @@ function JourneyPage() {
       )}
 
       <div className="mt-5 space-y-4">
+        {(step === "TRAVEL" || step === "AT_HUB") && (
+          <ReservationConfirmed
+            bookingCode={booking.booking_code}
+            modelName={model ? modelTitle(model.brand, model.name) : t("subtitleBooking")}
+            hubName={hub?.name ?? null}
+            hubAddress={hub?.address ?? null}
+            paidAmount={plan?.reservation_amount ?? 199}
+            amountAtHub={quote ? quote.amountAtHub : null}
+            rapidoCoupon={booking.rapido_coupon}
+            onRevealCoupon={async () => {
+              await setTravelMode({ data: { bookingId: booking.id, mode: "RAPIDO" } });
+              refresh();
+            }}
+          />
+        )}
+
         {step === "ELIGIBILITY" && (
           <EligibilityStep bookingId={booking.id} onDone={refresh} />
         )}
