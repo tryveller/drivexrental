@@ -97,15 +97,15 @@ export function helmetCharge(
 ): number {
   if (mode === "NONE") return 0;
   if (mode === "BUY") return rates.helmetBuyPrice;
+  const periodDays = planPeriodDays(plan);
   if (plan.plan_type === "MONTHLY" || plan.plan_type === "RTO") {
-    const months = duration ? Math.max(1, Math.ceil(duration.days / 30)) : 1;
+    const months = duration ? Math.max(1, Math.ceil(duration.days / periodDays)) : 1;
     return rates.helmetMonthlyRate * months;
   }
+  // Helmets are rented in whole days: any part-day counts as a day.
   const days = duration
     ? Math.max(1, duration.days + (duration.extraHours > 0 ? 1 : 0))
-    : plan.plan_type === "WEEKLY"
-      ? 7
-      : 1;
+    : periodDays;
   return rates.helmetDailyRate * days;
 }
 
