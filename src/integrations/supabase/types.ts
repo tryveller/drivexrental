@@ -253,6 +253,33 @@ export type Database = {
           },
         ]
       }
+      customer_documents: {
+        Row: {
+          created_at: string
+          customer_id: string
+          doc_type: string
+          id: string
+          path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          doc_type: string
+          id?: string
+          path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          doc_type?: string
+          id?: string
+          path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           city: string | null
@@ -425,6 +452,7 @@ export type Database = {
           dl_verified: boolean
           eligibility_result: string | null
           id: string
+          pan_path: string | null
           rejection_reason: string | null
           selfie_captured: boolean
           selfie_path: string | null
@@ -454,6 +482,7 @@ export type Database = {
           dl_verified?: boolean
           eligibility_result?: string | null
           id?: string
+          pan_path?: string | null
           rejection_reason?: string | null
           selfie_captured?: boolean
           selfie_path?: string | null
@@ -483,6 +512,7 @@ export type Database = {
           dl_verified?: boolean
           eligibility_result?: string | null
           id?: string
+          pan_path?: string | null
           rejection_reason?: string | null
           selfie_captured?: boolean
           selfie_path?: string | null
