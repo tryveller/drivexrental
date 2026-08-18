@@ -26,6 +26,7 @@ import { useRiderSession } from "@/hooks/useRiderSession";
 import {
   addonRates,
   computeConditionScore,
+  buildQuote,
   computeDuration,
   meetsMinDuration,
   minDurationDays,
@@ -138,10 +139,14 @@ function Discovery() {
       const modelPlans = plans.filter(
         (plan) => plan.model_id === model.id || plan.model_id === null,
       );
-      const cheapest = modelPlans.reduce<(typeof modelPlans)[number] | null>(
-        (min, plan) => (min === null || plan.rental_amount < min.rental_amount ? plan : min),
-        null,
-      );
+      // Plans are compared on their day rate (weekly ÷ 7, monthly ÷ 30) so the
+      // "from" price is always the genuinely cheapest way to ride this bike.
+      const cheapest = modelPlans
+        .filter((plan) => plan.plan_type !== "RTO")
+        .reduce<(typeof modelPlans)[number] | null>(
+          (min, plan) => (min === null || planDayRate(plan) < planDayRate(min) ? plan : min),
+          null,
+        );
       return [
         { model, vehicle, hub: bikeHub, plans: modelPlans, cheapest, units: counts.get(id) ?? 0 },
       ];
@@ -251,8 +256,8 @@ function Discovery() {
               <BikeCard
                 model={row.model}
                 vehicle={row.vehicle}
-                fromAmount={row.cheapest?.rental_amount ?? null}
-                fromPeriod={row.cheapest?.billing_period ?? null}
+                fromAmount={row.cheapest ? Math.round(planDayRate(row.cheapest)) : null}
+                fromPeriod={null}
                 unitsReady={row.units}
                 distance={row.hub?.distance ?? null}
                 hubLocality={row.hub?.locality ?? null}
@@ -369,7 +374,11 @@ function Discovery() {
                     })}
                   </span>
                   <span className="block text-[11px] text-muted-foreground">
-                    {t("perDayApprox", { amount: rupees(planDayRate(chosenPlan)) })}
+                    {t("perDayApprox", {
+                      amount: rupees(
+                        buildQuote(chosenPlan, duration).perDay ?? planDayRate(chosenPlan),
+                      ),
+                    })}
                   </span>
                 </span>
                 <button
