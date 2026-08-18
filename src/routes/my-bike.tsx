@@ -30,7 +30,7 @@ import {
   payRent,
   requestReturn,
 } from "@/lib/rental.functions";
-import { SERVICE_INTERVAL_DAYS, SERVICE_INTERVAL_KM } from "@/lib/pricing";
+import { SERVICE_INTERVAL_DAYS, SERVICE_INTERVAL_KM, computeSettlement } from "@/lib/pricing";
 import { longDate, modelTitle, rupees, shortDate } from "@/lib/format";
 import { useLanguage, type TKey } from "@/lib/i18n";
 
