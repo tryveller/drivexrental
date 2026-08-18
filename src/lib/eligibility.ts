@@ -1,15 +1,29 @@
 /**
  * Single source of truth for how a rider's self-check is scored.
  *
- * Riders only upload documents — nothing about the licence is typed in — so the
- * indicative result depends on which captures are present. The binding decision
- * is always made by the hub team during KYC.
+ * Riders only give documents — Aadhaar, Driving Licence and (optionally) PAN,
+ * either pulled from DigiLocker or clicked/uploaded as pictures. Nothing about
+ * the licence is typed in, so the indicative result depends on which IDs are
+ * present. The binding decision is always made by the hub team during KYC.
  */
 export type EligibilityResult = "LIKELY_ELIGIBLE" | "ADDITIONAL_VERIFICATION";
 
-export function evaluateEligibility(docs: {
+/** How the rider gave their IDs. */
+export type EligibilityMethod = "DIGILOCKER" | "UPLOAD";
+
+export type EligibilityDocs = {
   dlFrontPath?: string | null;
-  selfiePath?: string | null;
-}): EligibilityResult {
-  return docs.dlFrontPath && docs.selfiePath ? "LIKELY_ELIGIBLE" : "ADDITIONAL_VERIFICATION";
+  dlBackPath?: string | null;
+  aadhaarFrontPath?: string | null;
+  aadhaarBackPath?: string | null;
+  panPath?: string | null;
+};
+
+/** The two IDs we cannot score without. PAN stays optional. */
+export function eligibilityDocsComplete(docs: EligibilityDocs): boolean {
+  return Boolean(docs.dlFrontPath && docs.aadhaarFrontPath);
+}
+
+export function evaluateEligibility(docs: EligibilityDocs): EligibilityResult {
+  return eligibilityDocsComplete(docs) ? "LIKELY_ELIGIBLE" : "ADDITIONAL_VERIFICATION";
 }
