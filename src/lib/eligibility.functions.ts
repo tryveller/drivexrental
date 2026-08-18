@@ -12,7 +12,10 @@ export const runEligibilityCheck = createServerFn({ method: "POST" })
     (input: {
       dlFrontPath?: string | null;
       dlBackPath?: string | null;
-      selfiePath?: string | null;
+      aadhaarFrontPath?: string | null;
+      aadhaarBackPath?: string | null;
+      panPath?: string | null;
+      method?: "DIGILOCKER" | "UPLOAD";
       consent: boolean;
       bookingId?: string | null;
     }) => input,
@@ -33,7 +36,10 @@ export const runEligibilityCheck = createServerFn({ method: "POST" })
       result,
       dl_front_path: data.dlFrontPath ?? null,
       dl_back_path: data.dlBackPath ?? null,
-      selfie_path: data.selfiePath ?? null,
+      aadhaar_front_path: data.aadhaarFrontPath ?? null,
+      aadhaar_back_path: data.aadhaarBackPath ?? null,
+      pan_path: data.panPath ?? null,
+      method: data.method ?? "UPLOAD",
       consent_version: CONSENT_VERSION,
       consent_text: CONSENT_TEXT,
       consent_at: new Date().toISOString(),
@@ -43,10 +49,16 @@ export const runEligibilityCheck = createServerFn({ method: "POST" })
     await persistDocuments(supabaseAdmin, context.userId, {
       "dl-front": data.dlFrontPath,
       "dl-back": data.dlBackPath,
-      selfie: data.selfiePath,
+      "aadhaar-front": data.aadhaarFrontPath,
+      "aadhaar-back": data.aadhaarBackPath,
+      pan: data.panPath,
     });
 
-    await track("eligibility_self_check", { result }, { customerId: context.userId });
+    await track(
+      "eligibility_self_check",
+      { result, method: data.method ?? "UPLOAD" },
+      { customerId: context.userId },
+    );
     return { result };
   });
 
@@ -56,7 +68,7 @@ export const getLatestEligibilityCheck = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { data } = await context.supabase
       .from("eligibility_checks")
-      .select("id, result, created_at")
+      .select("id, result, method, created_at")
       .eq("customer_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(1)
