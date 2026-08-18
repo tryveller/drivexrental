@@ -175,9 +175,6 @@ export const submitEligibility = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       bookingId: string;
-      dlNumber: string;
-      dlName: string;
-      dlDob: string;
       selfieCaptured: boolean;
       selfiePath?: string | null;
       dlFrontPath?: string | null;
@@ -189,21 +186,19 @@ export const submitEligibility = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (!data.consent) throw new Error("We need your consent to run the eligibility check.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { track, isLikelyDl } = await import("./drivex.server");
+    const { track } = await import("./drivex.server");
 
-    const dl = data.dlNumber.toUpperCase().replace(/[-\s]/g, "");
-    const validDl = isLikelyDl(dl);
-    const result = validDl && data.selfieCaptured ? "LIKELY_ELIGIBLE" : "ADDITIONAL_VERIFICATION";
+    // Riders only upload documents now — the licence is read by the hub team,
+    // never typed in, so eligibility depends on the captures being present.
+    const hasDocs = Boolean(data.dlFrontPath) && Boolean(data.selfiePath);
+    const result = hasDocs ? "LIKELY_ELIGIBLE" : "ADDITIONAL_VERIFICATION";
 
     await supabaseAdmin.from("kyc_cases").upsert(
       {
         booking_id: data.bookingId,
         customer_id: context.userId,
         status: "SUBMITTED",
-        dl_number: dl,
-        dl_name: data.dlName,
-        dl_dob: data.dlDob || null,
-        dl_verified: data.method === "DIGITAL" && validDl,
+        dl_verified: false,
         selfie_captured: data.selfieCaptured,
         selfie_path: data.selfiePath ?? null,
         dl_front_path: data.dlFrontPath ?? null,
