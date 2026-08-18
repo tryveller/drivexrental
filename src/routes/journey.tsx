@@ -360,7 +360,15 @@ function JourneyPage() {
           />
         )}
 
-        {step === "PAYMENT" && <PaymentStep bookingId={booking.id} onDone={refresh} />}
+        {step === "PAYMENT" && (
+          <PaymentStep
+            bookingId={booking.id}
+            plan={plan}
+            duration={duration}
+            rates={addonRates(catalog.data?.addons)}
+            onDone={refresh}
+          />
+        )}
 
         {step === "AGREEMENT" && (
           <AgreementStep bookingId={booking.id} onDone={refresh} />
@@ -709,11 +717,32 @@ function HubKycStep({
   );
 }
 
-function PaymentStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
+function PaymentStep({
+  bookingId,
+  plan,
+  duration,
+  rates,
+  onDone,
+}: {
+  bookingId: string;
+  plan: { plan_type: PlanType } | null;
+  duration: RideDuration | null;
+  rates: AddonRates;
+  onDone: () => void;
+}) {
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
   const breakdown = useQuery({
     queryKey: ["final-breakdown", bookingId],
     queryFn: () => getFinalPaymentBreakdown({ data: { bookingId } }),
+  });
+
+  const helmet = useMutation({
+    mutationFn: (mode: HelmetMode) => setExtraHelmet({ data: { bookingId, mode } }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["final-breakdown", bookingId] }),
+    onError: (error: unknown) =>
+      toast.error(error instanceof Error ? error.message : t("paymentError")),
   });
 
   const pay = useMutation({
@@ -740,6 +769,16 @@ function PaymentStep({ bookingId, onDone }: { bookingId: string; onDone: () => v
           <p className="text-sm text-muted-foreground">{t("preparingSummary")}</p>
         ) : (
           <div className="space-y-3">
+            {plan && (
+              <HelmetPicker
+                plan={plan}
+                duration={duration}
+                rates={rates}
+                value={breakdown.data.helmetMode}
+                onChange={(mode) => helmet.mutate(mode)}
+                disabled={helmet.isPending}
+              />
+            )}
             <dl className="space-y-1.5 text-sm">
               {breakdown.data.lines.map((line) => (
                 <div key={line.labelKey} className="flex justify-between gap-4">
