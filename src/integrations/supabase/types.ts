@@ -946,6 +946,7 @@ export type Database = {
           name: string
           range_km: number | null
           safety_key: string
+          start_type: string
           storage_litres: number
           top_speed_kmph: number | null
           transmission: string
@@ -965,6 +966,7 @@ export type Database = {
           name: string
           range_km?: number | null
           safety_key?: string
+          start_type?: string
           storage_litres?: number
           top_speed_kmph?: number | null
           transmission?: string
@@ -984,6 +986,7 @@ export type Database = {
           name?: string
           range_km?: number | null
           safety_key?: string
+          start_type?: string
           storage_litres?: number
           top_speed_kmph?: number | null
           transmission?: string
