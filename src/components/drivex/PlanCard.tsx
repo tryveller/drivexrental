@@ -1,6 +1,6 @@
 import { Check, ShieldCheck } from "lucide-react";
 import type { CatalogPlan } from "@/lib/catalog.functions";
-import { buildQuote, planDayRate } from "@/lib/pricing";
+import { minDurationDays, planDayRate } from "@/lib/pricing";
 import { rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
@@ -14,9 +14,9 @@ export function PlanCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const quote = buildQuote(plan);
   const { t } = useLanguage();
   const dayRate = planDayRate(plan);
+  const minDays = minDurationDays(plan);
   const title = t(
     plan.plan_type === "DAILY"
       ? "planDaily"
@@ -60,7 +60,7 @@ export function PlanCard({
       <dl className="mt-3 space-y-1.5 text-sm">
         {plan.deposit_amount > 0 && (
           <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">{t("lineDeposit")}</dt>
+            <dt className="text-muted-foreground">{t("depositRefundableLabel")}</dt>
             <dd className="font-medium">{rupees(plan.deposit_amount)}</dd>
           </div>
         )}
@@ -68,7 +68,7 @@ export function PlanCard({
           <dt className="text-muted-foreground">
             {t("totalForPeriod", { period: plan.billing_period })}
           </dt>
-          <dd className="font-medium">{rupees(quote.totalInitialLiability)}</dd>
+          <dd className="font-medium">{rupees(plan.rental_amount)}</dd>
         </div>
         <div className="flex justify-between gap-4 border-t border-border pt-1.5">
           <dt className="text-muted-foreground">{t("kmIncluded")}</dt>
@@ -91,6 +91,10 @@ export function PlanCard({
 
       <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
         {t("reserveHoldNote", { reserve: rupees(plan.reservation_amount) })}
+      </p>
+
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        {t("minDurationNote", { days: minDays })}
       </p>
 
       <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-primary">

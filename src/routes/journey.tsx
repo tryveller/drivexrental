@@ -44,6 +44,7 @@ import {
   addonRates,
   buildQuote,
   computeDuration,
+  isHelmetMode,
   slotLabelKey,
   type AddonRates,
   type HelmetMode,
@@ -214,7 +215,12 @@ function JourneyPage() {
     booking.dropoff_on,
     booking.dropoff_slot,
   );
-  const quote = plan ? buildQuote(plan, duration) : null;
+  const quote = plan
+    ? buildQuote(plan, duration, {
+        mode: isHelmetMode(booking.extra_helmet_mode) ? booking.extra_helmet_mode : "NONE",
+        amount: booking.extra_helmet_amount ?? 0,
+      })
+    : null;
 
   return (
     <AppShell subtitle={t("subtitleBooking")}>

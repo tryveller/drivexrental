@@ -6,6 +6,8 @@ import {
   buildQuote,
   computeDuration,
   lateReturnFee,
+  meetsMinDuration,
+  minDurationDays,
   type AddonRates,
   type HelmetMode,
 } from "@/lib/pricing";
@@ -36,6 +38,16 @@ export function defaultDates(): RideDates {
     dropoffOn: tomorrow.toISOString().slice(0, 10),
     dropoffSlot: "EVENING",
   };
+}
+
+/** Push the drop-off out so the chosen plan's minimum duration is satisfied. */
+export function withMinDuration(dates: RideDates, minDays: number): RideDates {
+  const pickup = new Date(`${dates.pickupOn}T00:00:00`);
+  const earliest = new Date(pickup);
+  earliest.setDate(earliest.getDate() + Math.max(1, minDays));
+  const dropoff = new Date(`${dates.dropoffOn}T00:00:00`);
+  if (dropoff.getTime() >= earliest.getTime()) return dates;
+  return { ...dates, dropoffOn: earliest.toISOString().slice(0, 10) };
 }
 
 function SlotRow({
@@ -90,6 +102,9 @@ export function DatesStep({
     value.dropoffSlot,
   );
   const quote = buildQuote(plan, duration, { mode: helmet, rates });
+  const minDays = minDurationDays(plan);
+  const durationTooShort = duration !== null && !meetsMinDuration(plan, duration);
+  const chargeLines = quote.atHub.filter((line) => line.labelKey !== "lineDeposit");
 
   return (
     <div className="space-y-4">
@@ -143,6 +158,10 @@ export function DatesStep({
         <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
           {t("dropoffAfterPickup")}
         </p>
+      ) : durationTooShort ? (
+        <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs">
+          {t("minDurationError", { days: minDays })}
+        </p>
       ) : (
         <>
         <HelmetPicker
@@ -163,7 +182,7 @@ export function DatesStep({
           </div>
 
           <dl className="mt-2 space-y-1.5 text-sm">
-            {quote.atHub.map((line) => (
+            {chargeLines.map((line) => (
               <div key={line.labelKey} className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">
                   {t(line.labelKey as TKey, line.labelVars)}
@@ -171,6 +190,16 @@ export function DatesStep({
                 <dd className="font-medium">{rupees(line.amount)}</dd>
               </div>
             ))}
+            <div className="flex justify-between gap-4 border-t border-primary/20 pt-1.5">
+              <dt className="font-medium">{t("rentChargesLabel")}</dt>
+              <dd className="font-semibold">{rupees(quote.chargesTotal)}</dd>
+            </div>
+            {quote.depositAmount > 0 && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">{t("depositRefundableLabel")}</dt>
+                <dd className="font-medium">{rupees(quote.depositAmount)}</dd>
+              </div>
+            )}
           </dl>
 
           <div className="mt-3 flex items-baseline justify-between border-t border-primary/30 pt-3">
@@ -181,6 +210,9 @@ export function DatesStep({
             <p className="mt-1 text-right text-xs text-primary">
               {t("perDayApprox", { amount: rupees(quote.perDay) })}
             </p>
+          )}
+          {quote.depositAmount > 0 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">{t("depositRefundableNote")}</p>
           )}
 
           <p className="mt-3 rounded-xl bg-background/70 px-3 py-2 text-[11px] text-muted-foreground">

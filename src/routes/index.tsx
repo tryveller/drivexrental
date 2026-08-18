@@ -8,7 +8,7 @@ import { PageLoader } from "@/components/drivex/PageLoader";
 import { PlanCard } from "@/components/drivex/PlanCard";
 import { BikeCard } from "@/components/drivex/BikeCard";
 import { BikeDeck } from "@/components/drivex/BikeDeck";
-import { DatesStep, defaultDates, type RideDates } from "@/components/drivex/DatesStep";
+import { DatesStep, defaultDates, withMinDuration, type RideDates } from "@/components/drivex/DatesStep";
 import { PhoneLoginDialog } from "@/components/drivex/PhoneLoginDialog";
 import { ResumeCard, isRiding } from "@/components/drivex/ResumeCard";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,8 @@ import {
   addonRates,
   computeConditionScore,
   computeDuration,
+  meetsMinDuration,
+  minDurationDays,
   distanceKm,
   planDayRate,
   type HelmetMode,
@@ -170,7 +172,9 @@ function Discovery() {
     dates.dropoffOn,
     dates.dropoffSlot,
   );
-  const canContinue = Boolean(planId) && (!needsDates || duration !== null);
+  const canContinue =
+    Boolean(planId) &&
+    (!needsDates || (duration !== null && chosenPlan !== null && meetsMinDuration(chosenPlan, duration)));
 
   function continueToReserve() {
     const bikeHub = selected?.hub ?? hub;
@@ -339,7 +343,10 @@ function Discovery() {
                   <PlanCard
                     plan={plan}
                     selected={planId === plan.id}
-                    onSelect={() => setPlanId(plan.id)}
+                    onSelect={() => {
+                      setPlanId(plan.id);
+                      setDates((current) => withMinDuration(current, minDurationDays(plan)));
+                    }}
                   />
                 </div>
               ))}

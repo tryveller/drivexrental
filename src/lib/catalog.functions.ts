@@ -28,6 +28,7 @@ export type CatalogPlan = {
   late_fee_per_day: number;
   late_return_fee: number;
   rto_total_months: number | null;
+  minimum_duration_days: number;
 };
 
 export type CatalogModel = {
@@ -89,7 +90,7 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
     supabase
       .from("plans")
       .select(
-        "id, model_id, plan_type, vehicle_condition, billing_period, rental_amount, deposit_amount, downpayment_amount, processing_fee, included_km, extra_km_rate, reservation_amount, late_fee_per_day, late_return_fee, rto_total_months",
+        "id, model_id, plan_type, vehicle_condition, billing_period, rental_amount, deposit_amount, downpayment_amount, processing_fee, included_km, extra_km_rate, reservation_amount, late_fee_per_day, late_return_fee, rto_total_months, minimum_duration_days",
       ),
     supabase
       .from("vehicles")
