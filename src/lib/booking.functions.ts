@@ -677,6 +677,11 @@ export const submitHubKyc = createServerFn({ method: "POST" })
       pan: data.panPath,
     });
 
+    // Remember the verification on the rider profile, so a repeat booking —
+    // from this number or another number on the same profile — skips KYC.
+    const { promoteKycToProfile } = await import("./profile.server");
+    await promoteKycToProfile(supabaseAdmin, context.userId);
+
     await supabaseAdmin
       .from("bookings")
       .update({ status: "FINAL_PAYMENT_PENDING" })
@@ -684,6 +689,66 @@ export const submitHubKyc = createServerFn({ method: "POST" })
       .eq("customer_id", context.userId);
 
     await track("kyc_approved", {}, { customerId: context.userId, bookingId: data.bookingId });
+    return { status: "APPROVED" as const };
+  });
+
+/**
+ * A rider who has already been verified does not repeat KYC: the saved profile
+ * verification is copied onto the new booking.
+ */
+export const reuseSavedKyc = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { bookingId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { track } = await import("./drivex.server");
+    const { kycReusable, readProfile } = await import("./profile.server");
+    const { readDocuments } = await import("./documents.server");
+
+    const profile = await readProfile(supabaseAdmin, context.userId);
+    if (!kycReusable(profile)) {
+      throw new Error("We need to verify your documents for this booking.");
+    }
+
+    const { data: booking } = await supabaseAdmin
+      .from("bookings")
+      .select("id")
+      .eq("id", data.bookingId)
+      .eq("customer_id", context.userId)
+      .single();
+    if (!booking) throw new Error("Booking not found");
+
+    const docs = await readDocuments(supabaseAdmin, context.userId);
+
+    await supabaseAdmin.from("kyc_cases").upsert(
+      {
+        booking_id: booking.id,
+        customer_id: context.userId,
+        status: "APPROVED",
+        dl_verified: true,
+        selfie_captured: Boolean(docs["selfie"]),
+        dl_front_path: docs["dl-front"] ?? null,
+        dl_back_path: docs["dl-back"] ?? null,
+        address_proof_path: docs["address-proof"] ?? null,
+        pan_path: docs["pan"] ?? null,
+        selfie_path: docs["selfie"] ?? null,
+        address_proof_status: "VERIFIED",
+        address_proof_type: "REUSED",
+        dl_number: profile?.dl_number ?? null,
+        dl_name: profile?.dl_name ?? null,
+        dl_dob: profile?.dl_dob ?? null,
+        dl_valid_until: profile?.dl_valid_until ?? null,
+        action_required_reason: null,
+      },
+      { onConflict: "booking_id" },
+    );
+
+    await supabaseAdmin
+      .from("bookings")
+      .update({ status: "FINAL_PAYMENT_PENDING" })
+      .eq("id", booking.id);
+
+    await track("kyc_reused", {}, { customerId: context.userId, bookingId: booking.id });
     return { status: "APPROVED" as const };
   });
 
