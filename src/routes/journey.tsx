@@ -15,7 +15,14 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/drivex/AppShell";
 import { PageLoader } from "@/components/drivex/PageLoader";
-import { CaptureField } from "@/components/drivex/CaptureField";
+import {
+  EMPTY_ID_DOCS,
+  IdDocumentFields,
+  IdMethodPicker,
+  PendingConfirmation,
+  type IdDocState,
+} from "@/components/drivex/IdDocuments";
+import { eligibilityDocsComplete, type EligibilityMethod } from "@/lib/eligibility";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -502,18 +509,24 @@ function ReserveStep({
 function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
   const { t } = useLanguage();
   const saved = useQuery({ queryKey: ["saved-docs"], queryFn: () => getSavedDocuments() });
-  const [selfiePath, setSelfiePath] = useState<string | null>(null);
-  const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
-  const [dlBackPath, setDlBackPath] = useState<string | null>(null);
+  const [docs, setDocs] = useState<IdDocState>(EMPTY_ID_DOCS);
+  const [method, setMethod] = useState<EligibilityMethod>("UPLOAD");
   const [prefilled, setPrefilled] = useState(false);
   const [consent, setConsent] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  /** Lets a rider replace an ID we already hold instead of being stuck on it. */
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!saved.data || prefilled) return;
-    setSelfiePath((old) => old ?? saved.data["selfie"] ?? null);
-    setDlFrontPath((old) => old ?? saved.data["dl-front"] ?? null);
-    setDlBackPath((old) => old ?? saved.data["dl-back"] ?? null);
+    const map = saved.data;
+    setDocs((old) => ({
+      aadhaarFrontPath: old.aadhaarFrontPath ?? map["aadhaar-front"] ?? null,
+      aadhaarBackPath: old.aadhaarBackPath ?? map["aadhaar-back"] ?? null,
+      dlFrontPath: old.dlFrontPath ?? map["dl-front"] ?? null,
+      dlBackPath: old.dlBackPath ?? map["dl-back"] ?? null,
+      panPath: old.panPath ?? map["pan"] ?? null,
+    }));
     setPrefilled(true);
   }, [saved.data, prefilled]);
 
@@ -522,21 +535,21 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       submitEligibility({
         data: {
           bookingId,
-          selfieCaptured: Boolean(selfiePath),
-          selfiePath,
-          dlFrontPath,
-          dlBackPath,
+          ...docs,
           consent,
-          method: "DIGITAL",
+          method,
         },
       }),
     onSuccess: (data) => {
       setResult(data.result);
+      setEditing(false);
       onDone();
     },
     onError: (error: unknown) =>
       toast.error(error instanceof Error ? error.message : t("couldNotCheck")),
   });
+
+  const docsReady = eligibilityDocsComplete(docs);
 
   if (result) {
     return (
@@ -546,7 +559,40 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
           result === "LIKELY_ELIGIBLE" ? t("eligibleTitle") : t("eligibleCloserLook")
         }
         body={
-          <p className="text-sm text-muted-foreground">{t("eligibilityIndicative")}</p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">{t("eligibilityIndicative")}</p>
+            <Button variant="ghost" className="px-0" onClick={() => { setResult(null); setEditing(true); }}>
+              {t("editDocuments")}
+            </Button>
+          </div>
+        }
+      />
+    );
+  }
+
+  // IDs already on file, no verdict yet: say so instead of asking again.
+  if (docsReady && !editing && prefilled && !submit.isPending) {
+    return (
+      <StepCard
+        icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
+        title={t("eligibilityTitle")}
+        body={
+          <div className="space-y-3">
+            <PendingConfirmation />
+            <p className="text-xs text-muted-foreground">{t("eligibilityDocsSaved")}</p>
+          </div>
+        }
+        action={
+          <div className="flex flex-col gap-2 sm:flex-row-reverse sm:justify-start">
+            <ActionButton
+              label={t("reserveNowVerifyAtHub")}
+              run={() => skipEligibility({ data: { bookingId } })}
+              onDone={onDone}
+            />
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setEditing(true)}>
+              {t("editDocuments")}
+            </Button>
+          </div>
         }
       />
     );
@@ -562,33 +608,16 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
           <p className="rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
             {t("eligibilityOptionalNote")} {t("hubVerificationRisk")}
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <CaptureField
-              bookingId={bookingId}
-              slot="dl-front"
-              label={t("dlFrontLabel")}
-              hint={t("dlFrontHint")}
-              value={dlFrontPath}
-              onChange={setDlFrontPath}
-            />
-            <CaptureField
-              bookingId={bookingId}
-              slot="dl-back"
-              label={t("dlBackLabel")}
-              hint={t("dlBackHint")}
-              value={dlBackPath}
-              onChange={setDlBackPath}
-            />
-            <CaptureField
-              bookingId={bookingId}
-              slot="selfie"
-              label={t("selfieLabel")}
-              hint={t("selfieHint")}
-              facing="user"
-              value={selfiePath}
-              onChange={setSelfiePath}
-            />
+          <IdMethodPicker method={method} onMethod={setMethod} />
+          <div>
+            <p className="text-sm font-medium">{t("idDocsTitle")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("idDocsHint")}</p>
           </div>
+          <IdDocumentFields
+            bookingId={bookingId}
+            docs={docs}
+            onChange={(next) => setDocs((old) => ({ ...old, ...next }))}
+          />
           <label className="flex items-start gap-2 text-xs text-muted-foreground">
             <Checkbox
               checked={consent}
@@ -615,8 +644,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             disabled={
               submit.isPending ||
               !consent ||
-              !dlFrontPath ||
-              !selfiePath
+              !docsReady
             }
           >
             {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

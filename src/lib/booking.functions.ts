@@ -283,12 +283,13 @@ export const submitEligibility = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       bookingId: string;
-      selfieCaptured: boolean;
-      selfiePath?: string | null;
       dlFrontPath?: string | null;
       dlBackPath?: string | null;
+      aadhaarFrontPath?: string | null;
+      aadhaarBackPath?: string | null;
+      panPath?: string | null;
       consent: boolean;
-      method: "DIGITAL" | "UPLOAD";
+      method: "DIGILOCKER" | "UPLOAD";
     }) => input,
   )
   .handler(async ({ data, context }) => {
@@ -308,10 +309,12 @@ export const submitEligibility = createServerFn({ method: "POST" })
         customer_id: context.userId,
         status: "SUBMITTED",
         dl_verified: false,
-        selfie_captured: data.selfieCaptured,
-        selfie_path: data.selfiePath ?? null,
         dl_front_path: data.dlFrontPath ?? null,
         dl_back_path: data.dlBackPath ?? null,
+        aadhaar_front_path: data.aadhaarFrontPath ?? null,
+        aadhaar_back_path: data.aadhaarBackPath ?? null,
+        pan_path: data.panPath ?? null,
+        verification_method: data.method,
         eligibility_result: result,
         consent_version: CONSENT_VERSION,
         consent_text: CONSENT_TEXT,
@@ -324,7 +327,9 @@ export const submitEligibility = createServerFn({ method: "POST" })
     await persistDocuments(supabaseAdmin, context.userId, {
       "dl-front": data.dlFrontPath,
       "dl-back": data.dlBackPath,
-      selfie: data.selfiePath,
+      "aadhaar-front": data.aadhaarFrontPath,
+      "aadhaar-back": data.aadhaarBackPath,
+      pan: data.panPath,
     });
 
     await supabaseAdmin
