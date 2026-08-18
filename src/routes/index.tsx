@@ -8,7 +8,7 @@ import { PageLoader } from "@/components/drivex/PageLoader";
 import { PlanCard } from "@/components/drivex/PlanCard";
 import { BikeCard } from "@/components/drivex/BikeCard";
 import { BikeDeck } from "@/components/drivex/BikeDeck";
-import { DatesStep, defaultDates, type RideDates } from "@/components/drivex/DatesStep";
+import { DatesStep, defaultDates, withMinDuration, type RideDates } from "@/components/drivex/DatesStep";
 import { PhoneLoginDialog } from "@/components/drivex/PhoneLoginDialog";
 import { ResumeCard, isRiding } from "@/components/drivex/ResumeCard";
 import { Button } from "@/components/ui/button";
@@ -342,7 +342,10 @@ function Discovery() {
                   <PlanCard
                     plan={plan}
                     selected={planId === plan.id}
-                    onSelect={() => setPlanId(plan.id)}
+                    onSelect={() => {
+                      setPlanId(plan.id);
+                      setDates((current) => withMinDuration(current, minDurationDays(plan)));
+                    }}
                   />
                 </div>
               ))}
