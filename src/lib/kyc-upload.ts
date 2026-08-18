@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const KYC_BUCKET = "kyc-docs";
 
-export type KycSlot = "selfie" | "dl-front" | "dl-back" | "address-proof";
+export type KycSlot = "selfie" | "dl-front" | "dl-back" | "address-proof" | "pan";
 
 /** Uploads a captured photo (or picked file) to the rider's private KYC folder. */
 export async function uploadKycFile(
