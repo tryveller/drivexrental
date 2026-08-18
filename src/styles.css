@@ -145,6 +145,7 @@
   --sidebar-accent-foreground: oklch(0.95 0.03 75);
   --sidebar-border: oklch(0.72 0.16 55 / 18%);
   --sidebar-ring: oklch(0.7 0.19 52);
+  --whatsapp: oklch(0.72 0.2 145);
 }
 
 @layer base {
