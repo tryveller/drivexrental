@@ -18,7 +18,6 @@ import { PageLoader } from "@/components/drivex/PageLoader";
 import { CaptureField } from "@/components/drivex/CaptureField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useRiderSession } from "@/hooks/useRiderSession";
@@ -487,9 +486,6 @@ function ActionButton<T>({
 
 function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
   const { t } = useLanguage();
-  const [dlNumber, setDlNumber] = useState("");
-  const [dlName, setDlName] = useState("");
-  const [dlDob, setDlDob] = useState("");
   const [selfiePath, setSelfiePath] = useState<string | null>(null);
   const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
   const [dlBackPath, setDlBackPath] = useState<string | null>(null);
@@ -501,9 +497,6 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       submitEligibility({
         data: {
           bookingId,
-          dlNumber,
-          dlName,
-          dlDob,
           selfieCaptured: Boolean(selfiePath),
           selfiePath,
           dlFrontPath,
@@ -541,34 +534,6 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
       body={
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">{t("eligibilityHint")}</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="dl">{t("dlNumberLabel")}</Label>
-              <Input
-                id="dl"
-                value={dlNumber}
-                onChange={(event) => setDlNumber(event.target.value.toUpperCase())}
-                placeholder="KA0120150001234"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="dlname">{t("nameOnLicence")}</Label>
-              <Input
-                id="dlname"
-                value={dlName}
-                onChange={(event) => setDlName(event.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="dob">{t("dateOfBirth")}</Label>
-              <Input
-                id="dob"
-                type="date"
-                value={dlDob}
-                onChange={(event) => setDlDob(event.target.value)}
-              />
-            </div>
-          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <CaptureField
               bookingId={bookingId}
@@ -614,8 +579,6 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             disabled={
               submit.isPending ||
               !consent ||
-              dlNumber.length < 10 ||
-              !dlName.trim() ||
               !dlFrontPath ||
               !selfiePath
             }
@@ -645,9 +608,6 @@ function HubKycStep({
   onDone: () => void;
 }) {
   const { t } = useLanguage();
-  const [dlNumber, setDlNumber] = useState("");
-  const [dlName, setDlName] = useState("");
-  const [addressProof, setAddressProof] = useState("");
   const [selfiePath, setSelfiePath] = useState<string | null>(null);
   const [dlFrontPath, setDlFrontPath] = useState<string | null>(null);
   const [dlBackPath, setDlBackPath] = useState<string | null>(null);
@@ -658,9 +618,6 @@ function HubKycStep({
       submitHubKyc({
         data: {
           bookingId,
-          dlNumber,
-          dlName,
-          addressProof,
           selfieCaptured: Boolean(selfiePath),
           selfiePath,
           dlFrontPath,
@@ -692,34 +649,6 @@ function HubKycStep({
             </p>
           )}
           <p className="text-sm text-muted-foreground">{t("kycHint")}</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="hub-dl">{t("dlNumberLabel")}</Label>
-              <Input
-                id="hub-dl"
-                value={dlNumber}
-                onChange={(event) => setDlNumber(event.target.value.toUpperCase())}
-                placeholder="KA0120150001234"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="hub-name">{t("nameOnLicence")}</Label>
-              <Input
-                id="hub-name"
-                value={dlName}
-                onChange={(event) => setDlName(event.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="proof">{t("addressProofLabel")}</Label>
-              <Input
-                id="proof"
-                value={addressProof}
-                onChange={(event) => setAddressProof(event.target.value)}
-                placeholder={t("addressProofPlaceholder")}
-              />
-            </div>
-          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <CaptureField
               bookingId={bookingId}
@@ -755,7 +684,7 @@ function HubKycStep({
               onChange={setSelfiePath}
             />
           </div>
-          {(!dlFrontPath || !addressProofPath || !selfiePath || !addressProof.trim()) && (
+          {(!dlFrontPath || !dlBackPath || !addressProofPath || !selfiePath) && (
             <p className="text-xs text-muted-foreground">{t("docsPending")}</p>
           )}
         </div>
@@ -766,10 +695,8 @@ function HubKycStep({
           onClick={() => submit.mutate()}
           disabled={
             submit.isPending ||
-            !dlNumber.trim() ||
-            !dlName.trim() ||
-            !addressProof.trim() ||
             !dlFrontPath ||
+            !dlBackPath ||
             !addressProofPath ||
             !selfiePath
           }

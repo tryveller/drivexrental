@@ -175,9 +175,6 @@ export const submitEligibility = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       bookingId: string;
-      dlNumber: string;
-      dlName: string;
-      dlDob: string;
       selfieCaptured: boolean;
       selfiePath?: string | null;
       dlFrontPath?: string | null;
@@ -189,21 +186,19 @@ export const submitEligibility = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (!data.consent) throw new Error("We need your consent to run the eligibility check.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { track, isLikelyDl } = await import("./drivex.server");
+    const { track } = await import("./drivex.server");
 
-    const dl = data.dlNumber.toUpperCase().replace(/[-\s]/g, "");
-    const validDl = isLikelyDl(dl);
-    const result = validDl && data.selfieCaptured ? "LIKELY_ELIGIBLE" : "ADDITIONAL_VERIFICATION";
+    // Riders only upload documents now — the licence is read by the hub team,
+    // never typed in, so eligibility depends on the captures being present.
+    const hasDocs = Boolean(data.dlFrontPath) && Boolean(data.selfiePath);
+    const result = hasDocs ? "LIKELY_ELIGIBLE" : "ADDITIONAL_VERIFICATION";
 
     await supabaseAdmin.from("kyc_cases").upsert(
       {
         booking_id: data.bookingId,
         customer_id: context.userId,
         status: "SUBMITTED",
-        dl_number: dl,
-        dl_name: data.dlName,
-        dl_dob: data.dlDob || null,
-        dl_verified: data.method === "DIGITAL" && validDl,
+        dl_verified: false,
         selfie_captured: data.selfieCaptured,
         selfie_path: data.selfiePath ?? null,
         dl_front_path: data.dlFrontPath ?? null,
@@ -462,9 +457,6 @@ export const submitHubKyc = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       bookingId: string;
-      dlNumber: string;
-      dlName: string;
-      addressProof: string;
       selfieCaptured: boolean;
       selfiePath?: string | null;
       dlFrontPath?: string | null;
@@ -474,25 +466,23 @@ export const submitHubKyc = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { track, isLikelyDl } = await import("./drivex.server");
+    const { track } = await import("./drivex.server");
 
-    const dl = data.dlNumber.toUpperCase().replace(/[-\s]/g, "");
-    const validDl = isLikelyDl(dl);
-    const complete =
-      Boolean(data.dlName.trim()) &&
-      Boolean(data.addressProof) &&
-      Boolean(data.selfiePath) &&
-      Boolean(data.dlFrontPath) &&
-      Boolean(data.addressProofPath);
+    // Documents only: nothing is typed, so the only check is that every
+    // required capture actually uploaded.
+    const missing = [
+      !data.dlFrontPath && "licence front",
+      !data.dlBackPath && "licence back",
+      !data.addressProofPath && "address proof",
+      !data.selfiePath && "selfie",
+    ].filter(Boolean) as string[];
 
-    if (!validDl || !complete) {
+    if (missing.length > 0) {
       await supabaseAdmin
         .from("kyc_cases")
         .update({
           status: "ACTION_REQUIRED",
-          action_required_reason: !validDl
-            ? "Your Driving Licence details could not be read clearly. Please capture the licence again."
-            : "One of your documents is incomplete. Please add your address proof and selfie again.",
+          action_required_reason: `Please upload: ${missing.join(", ")}.`,
         })
         .eq("booking_id", data.bookingId);
       return { status: "ACTION_REQUIRED" as const };
@@ -502,15 +492,13 @@ export const submitHubKyc = createServerFn({ method: "POST" })
       .from("kyc_cases")
       .update({
         status: "APPROVED",
-        dl_number: dl,
-        dl_name: data.dlName,
         dl_verified: true,
         selfie_captured: true,
         selfie_path: data.selfiePath ?? null,
         dl_front_path: data.dlFrontPath ?? null,
         dl_back_path: data.dlBackPath ?? null,
         address_proof_path: data.addressProofPath ?? null,
-        address_proof_type: data.addressProof,
+        address_proof_type: "UPLOAD",
         address_proof_status: "VERIFIED",
         action_required_reason: null,
       })
