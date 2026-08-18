@@ -6,7 +6,8 @@ export type KycSlot = "selfie" | "dl-front" | "dl-back" | "address-proof" | "pan
 
 /** Uploads a captured photo (or picked file) to the rider's private KYC folder. */
 export async function uploadKycFile(
-  bookingId: string,
+  /** Booking id, or "self-check" for documents given outside a booking. */
+  scope: string,
   slot: KycSlot,
   file: Blob,
   fileName?: string,
@@ -18,7 +19,7 @@ export async function uploadKycFile(
   const ext =
     (fileName?.includes(".") ? fileName.split(".").pop() : undefined) ??
     (file.type === "application/pdf" ? "pdf" : (file.type.split("/")[1] || "jpg"));
-  const path = `${userId}/${bookingId}/${slot}-${Date.now()}.${ext}`;
+  const path = `${userId}/${scope}/${slot}-${Date.now()}.${ext}`;
 
   const { error } = await supabase.storage.from(KYC_BUCKET).upload(path, file, {
     contentType: file.type || "image/jpeg",
