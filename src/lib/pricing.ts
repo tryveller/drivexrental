@@ -18,6 +18,7 @@ export type PlanConfig = {
   vehicle_condition: "NEW" | "REFURBISHED";
   rto_total_months: number | null;
   late_return_fee?: number;
+  minimum_duration_days?: number | null;
 };
 
 // Labels are copy keys (resolved through i18n at render time), never English
@@ -44,6 +45,10 @@ export type Quote = {
   perDay: number | null;
   /** Amount charged for the optional extra helmet (0 when none). */
   helmetAmount: number;
+  /** Refundable security deposit inside `totalInitialLiability`. */
+  depositAmount: number;
+  /** Everything that is actually a charge: total minus the refundable deposit. */
+  chargesTotal: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -137,6 +142,31 @@ export function planDayRate(plan: Pick<PlanConfig, "plan_type" | "rental_amount"
   return plan.rental_amount;
 }
 
+/**
+ * Shortest booking a plan allows. Weekly and monthly rates are cheaper per day
+ * than the daily rate, so without this a 1-day booking on the monthly plan
+ * would undercut the daily plan.
+ */
+export function minDurationDays(
+  plan: Pick<PlanConfig, "plan_type" | "minimum_duration_days">,
+): number {
+  const configured = plan.minimum_duration_days;
+  if (typeof configured === "number" && configured > 0) return configured;
+  if (plan.plan_type === "WEEKLY") return 7;
+  if (plan.plan_type === "MONTHLY" || plan.plan_type === "RTO") return 30;
+  return 1;
+}
+
+/** True when the chosen dates satisfy the plan's minimum duration. */
+export function meetsMinDuration(
+  plan: Pick<PlanConfig, "plan_type" | "minimum_duration_days">,
+  duration: RideDuration | null | undefined,
+): boolean {
+  if (!duration) return false;
+  const billable = duration.days + (duration.extraHours > 0 ? 1 : 0);
+  return billable >= minDurationDays(plan);
+}
+
 export type RideDuration = { days: number; extraHours: number; totalHours: number };
 
 /**
@@ -166,11 +196,12 @@ export function computeDuration(
 export function buildQuote(
   plan: PlanConfig,
   duration?: RideDuration | null,
-  helmet?: { mode: HelmetMode; rates: AddonRates } | null,
+  helmet?: { mode: HelmetMode; rates?: AddonRates; amount?: number } | null,
 ): Quote {
   const reservation = plan.reservation_amount;
   const lines: QuoteLine[] = [];
   let rentAmount = plan.rental_amount;
+  let depositAmount = 0;
 
   if (plan.plan_type === "RTO") {
     if (plan.downpayment_amount > 0) {
@@ -201,6 +232,7 @@ export function buildQuote(
     }
     if (plan.deposit_amount > 0) {
       lines.push({ labelKey: "lineDeposit", amount: plan.deposit_amount });
+      depositAmount = plan.deposit_amount;
     }
   } else {
     lines.push({
@@ -210,6 +242,7 @@ export function buildQuote(
     });
     if (plan.deposit_amount > 0) {
       lines.push({ labelKey: "lineDeposit", amount: plan.deposit_amount });
+      depositAmount = plan.deposit_amount;
     }
   }
 
@@ -217,7 +250,9 @@ export function buildQuote(
   const helmetAmount =
     helmetMode === "NONE"
       ? 0
-      : helmetCharge(plan, duration ?? null, helmetMode, helmet?.rates ?? ADDON_RATE_FALLBACK);
+      : typeof helmet?.amount === "number"
+        ? helmet.amount
+        : helmetCharge(plan, duration ?? null, helmetMode, helmet?.rates ?? ADDON_RATE_FALLBACK);
   if (helmetAmount > 0) {
     lines.push({
       labelKey: helmetMode === "BUY" ? "lineHelmetBuy" : "lineHelmetRent",
@@ -240,6 +275,8 @@ export function buildQuote(
       ? Math.round(rentAmount / (duration.days + duration.extraHours / 24))
       : null,
     helmetAmount,
+    depositAmount,
+    chargesTotal: totalInitialLiability - depositAmount,
   };
 }
 
