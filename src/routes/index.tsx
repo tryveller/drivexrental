@@ -171,7 +171,9 @@ function Discovery() {
     dates.dropoffOn,
     dates.dropoffSlot,
   );
-  const canContinue = Boolean(planId) && (!needsDates || duration !== null);
+  const canContinue =
+    Boolean(planId) &&
+    (!needsDates || (duration !== null && chosenPlan !== null && meetsMinDuration(chosenPlan, duration)));
 
   function continueToReserve() {
     const bikeHub = selected?.hub ?? hub;
