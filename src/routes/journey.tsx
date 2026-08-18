@@ -136,6 +136,9 @@ function JourneyPage() {
   const [creating, setCreating] = useState(
     () => typeof window !== "undefined" && Boolean(sessionStorage.getItem("drivex.selection")),
   );
+  // Set when a fresh selection could not be started because this number already
+  // has a live booking — we explain that instead of silently showing the old one.
+  const [blockedStatus, setBlockedStatus] = useState<string | null>(null);
 
   const journey = useQuery({
     queryKey: ["journey"],
@@ -169,7 +172,10 @@ function JourneyPage() {
     sessionStorage.removeItem("drivex.selection");
     setCreating(true);
     createBooking({ data: selection })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["journey"] }))
+      .then((result) => {
+        if (result.existing) setBlockedStatus(result.existingStatus ?? "RESERVED");
+        return queryClient.invalidateQueries({ queryKey: ["journey"] });
+      })
       .catch((error: unknown) =>
         toast.error(error instanceof Error ? error.message : t("couldNotStartBooking")),
       )
@@ -204,8 +210,12 @@ function JourneyPage() {
       <AppShell subtitle={t("subtitleBooking")}>
         <div className="rounded-2xl border border-border bg-card p-5 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-primary" />
-          <h1 className="mt-3 text-xl font-semibold">{t("bikeWithYou")}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{t("bikeWithYouBody")}</p>
+          <h1 className="mt-3 text-xl font-semibold">
+            {blockedStatus ? t("oneBikeTitle") : t("bikeWithYou")}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {blockedStatus ? t("oneBikeBody") : t("bikeWithYouBody")}
+          </p>
           <Button className="mt-4" onClick={() => navigate({ to: "/my-bike" })}>
             {t("openMyBike")}
           </Button>
@@ -229,6 +239,11 @@ function JourneyPage() {
 
   return (
     <AppShell subtitle={t("subtitleBooking")}>
+      {blockedStatus ? (
+        <p className="mb-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs text-muted-foreground">
+          {t("existingBookingNotice")}
+        </p>
+      ) : null}
       <header className="rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
