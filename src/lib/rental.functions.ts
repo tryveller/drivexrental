@@ -325,6 +325,25 @@ export const completeReturn = createServerFn({ method: "POST" })
       .from("rentals")
       .update({ status: "CLOSED", ended_at: new Date().toISOString() })
       .eq("id", rental.id);
+
+    // The refundable amount stays in the rider's wallet, so the next booking
+    // needs no fresh deposit. They can ask for a payout any time.
+    if (settlementTotals.refundAmount > 0) {
+      const { moveWallet, profileIdFor } = await import("./profile.server");
+      const profileId = await profileIdFor(supabaseAdmin, context.userId);
+      if (profileId) {
+        await moveWallet(supabaseAdmin, {
+          profileId,
+          customerId: context.userId,
+          bookingId: rental.booking_id,
+          entryType: "DEPOSIT_HELD",
+          amount: settlementTotals.refundAmount,
+          note: "Security deposit kept in your DriveX wallet",
+          deposit: true,
+        });
+      }
+    }
+
     await supabaseAdmin.from("bookings").update({ status: "CLOSED" }).eq("id", rental.booking_id);
     await supabaseAdmin
       .from("vehicles")
