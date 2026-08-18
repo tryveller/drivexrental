@@ -32,6 +32,7 @@ export const verifyOtp = createServerFn({ method: "POST" })
     const code = data.code.replace(/\D/g, "");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { track } = await import("./drivex.server");
+    const { ensureProfileForCustomer } = await import("./profile.server");
 
     const { data: rows } = await supabaseAdmin
       .from("otp_requests")
@@ -64,6 +65,9 @@ export const verifyOtp = createServerFn({ method: "POST" })
     if (existing) {
       const { error } = await supabaseAdmin.auth.admin.updateUserById(existing.id, { password });
       if (error) throw new Error(error.message);
+      // Returning rider: keep them on the same profile, so saved documents,
+      // wallet balance and history follow the number.
+      await ensureProfileForCustomer(supabaseAdmin, existing.id, phone);
     } else {
       const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -74,6 +78,8 @@ export const verifyOtp = createServerFn({ method: "POST" })
       if (error || !created.user) throw new Error(error?.message ?? "Could not create profile");
       await supabaseAdmin.from("customers").insert({ id: created.user.id, phone });
       await supabaseAdmin.from("user_roles").insert({ user_id: created.user.id, role: "rider" });
+      // A number invited as a second driver joins that rider profile here.
+      await ensureProfileForCustomer(supabaseAdmin, created.user.id, phone);
       await track("mobile_verified", { phone }, { customerId: created.user.id });
     }
 

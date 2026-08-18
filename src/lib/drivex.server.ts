@@ -38,6 +38,7 @@ export const ALLOWED_EVENTS = [
   "hub_checkin",
   "kyc_started",
   "kyc_approved",
+  "kyc_reused",
   "kyc_rejected",
   "final_payment_started",
   "final_payment_completed",
