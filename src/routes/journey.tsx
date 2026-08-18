@@ -552,7 +552,40 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
           result === "LIKELY_ELIGIBLE" ? t("eligibleTitle") : t("eligibleCloserLook")
         }
         body={
-          <p className="text-sm text-muted-foreground">{t("eligibilityIndicative")}</p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">{t("eligibilityIndicative")}</p>
+            <Button variant="ghost" className="px-0" onClick={() => { setResult(null); setEditing(true); }}>
+              {t("editDocuments")}
+            </Button>
+          </div>
+        }
+      />
+    );
+  }
+
+  // IDs already on file, no verdict yet: say so instead of asking again.
+  if (docsReady && !editing && prefilled && !submit.isPending) {
+    return (
+      <StepCard
+        icon={<ClipboardCheck className="h-5 w-5 text-primary" />}
+        title={t("eligibilityTitle")}
+        body={
+          <div className="space-y-3">
+            <PendingConfirmation />
+            <p className="text-xs text-muted-foreground">{t("eligibilityDocsSaved")}</p>
+          </div>
+        }
+        action={
+          <div className="flex flex-col gap-2 sm:flex-row-reverse sm:justify-start">
+            <ActionButton
+              label={t("reserveNowVerifyAtHub")}
+              run={() => skipEligibility({ data: { bookingId } })}
+              onDone={onDone}
+            />
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setEditing(true)}>
+              {t("editDocuments")}
+            </Button>
+          </div>
         }
       />
     );
@@ -568,33 +601,16 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
           <p className="rounded-xl bg-secondary px-3 py-2 text-xs text-secondary-foreground">
             {t("eligibilityOptionalNote")} {t("hubVerificationRisk")}
           </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <CaptureField
-              bookingId={bookingId}
-              slot="dl-front"
-              label={t("dlFrontLabel")}
-              hint={t("dlFrontHint")}
-              value={dlFrontPath}
-              onChange={setDlFrontPath}
-            />
-            <CaptureField
-              bookingId={bookingId}
-              slot="dl-back"
-              label={t("dlBackLabel")}
-              hint={t("dlBackHint")}
-              value={dlBackPath}
-              onChange={setDlBackPath}
-            />
-            <CaptureField
-              bookingId={bookingId}
-              slot="selfie"
-              label={t("selfieLabel")}
-              hint={t("selfieHint")}
-              facing="user"
-              value={selfiePath}
-              onChange={setSelfiePath}
-            />
+          <IdMethodPicker method={method} onMethod={setMethod} />
+          <div>
+            <p className="text-sm font-medium">{t("idDocsTitle")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("idDocsHint")}</p>
           </div>
+          <IdDocumentFields
+            bookingId={bookingId}
+            docs={docs}
+            onChange={(next) => setDocs((old) => ({ ...old, ...next }))}
+          />
           <label className="flex items-start gap-2 text-xs text-muted-foreground">
             <Checkbox
               checked={consent}
@@ -621,8 +637,7 @@ function EligibilityStep({ bookingId, onDone }: { bookingId: string; onDone: () 
             disabled={
               submit.isPending ||
               !consent ||
-              !dlFrontPath ||
-              !selfiePath
+              !docsReady
             }
           >
             {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
