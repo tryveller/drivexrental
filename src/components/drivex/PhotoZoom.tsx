@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { X, ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut } from "lucide-react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
@@ -117,7 +117,7 @@ export function PhotoZoom({
             }}
           />
         </div>
-        <div className="absolute right-3 top-3 flex gap-2">
+        <div className="absolute left-3 top-3 flex gap-2">
           <button
             type="button"
             aria-label="Zoom out"
@@ -133,14 +133,6 @@ export function PhotoZoom({
             className="flex h-11 w-11 items-center justify-center rounded-full bg-background/85 text-primary backdrop-blur"
           >
             <ZoomIn className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Close photo"
-            onClick={() => onOpenChange(false)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-background/85 text-primary backdrop-blur"
-          >
-            <X className="h-5 w-5" />
           </button>
         </div>
       </DialogContent>
