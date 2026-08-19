@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Loader2, Navigation, ShieldCheck } from "lucide-react";
+import { Loader2, MapPin, Navigation, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { AutoBackdrop } from "@/components/drivex/AutoBackdrop";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/lib/i18n";
 import { useRiderLocation } from "@/lib/location";
 import { saveLocation } from "@/lib/auth.functions";
@@ -12,20 +11,17 @@ import { saveLocation } from "@/lib/auth.functions";
 export function LocationGate({ children }: { children: ReactNode }) {
   const { t } = useLanguage();
   const { location, ready, setLocation } = useRiderLocation();
-  const [pinCode, setPinCode] = useState("");
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [typing, setTyping] = useState(false);
   const saved = useRef(false);
 
   function commit(next: {
-    pinCode?: string;
     coords?: { lat: number; lng: number };
   }) {
     if (saved.current) return;
     saved.current = true;
     setLocation(next);
-    void saveLocation({ data: { pinCode: next.pinCode ?? "" } }).catch(() => {});
+    void saveLocation({ data: { pinCode: "" } }).catch(() => {});
   }
 
   // Granting location is the whole answer — no second Continue tap.
@@ -48,13 +44,10 @@ export function LocationGate({ children }: { children: ReactNode }) {
       () => {
         setLocating(false);
         toast.error(t("locationDenied"));
-        setTyping(true);
       },
       { timeout: 8000 },
     );
   }
-
-  const canContinue = pinCode.length === 6;
 
   // Hooks must run on every render, so the gate decision happens after them.
   if (!ready || location) return <>{children}</>;
@@ -63,10 +56,12 @@ export function LocationGate({ children }: { children: ReactNode }) {
     <div className="relative min-h-screen">
       <AutoBackdrop />
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-10">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("locationTitle")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("locationWhyShort")}</p>
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15">
+          <MapPin className="h-7 w-7 text-primary" />
+        </span>
+        <h1 className="mt-4 text-2xl font-semibold tracking-tight">{t("locationTitle")}</h1>
 
-        {/* One obvious action: tap, don't type. */}
+        {/* One obvious action: tap. No typing anywhere on this screen. */}
         <Button
           className="mt-6 h-16 rounded-2xl text-base font-semibold"
           size="lg"
@@ -86,35 +81,14 @@ export function LocationGate({ children }: { children: ReactNode }) {
           {t("approxLocationTitle")}
         </p>
 
-        {/* Typing a PIN is the fallback, never the first thing offered. */}
-        {typing ? (
-          <div className="mt-6 border-t border-border pt-5">
-            <Input
-              value={pinCode}
-              onChange={(event) => setPinCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder={t("pinPlaceholder")}
-              inputMode="numeric"
-              autoFocus
-              className="h-14 text-center text-lg tracking-[0.3em]"
-            />
-            <Button
-              className="mt-4 h-14 w-full rounded-2xl text-base font-semibold"
-              variant={canContinue ? "default" : "secondary"}
-              disabled={!canContinue}
-              onClick={() => commit({ pinCode })}
-            >
-              {t("continueLabel")}
-            </Button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setTyping(true)}
-            className="mt-6 self-start text-sm font-medium text-primary underline underline-offset-4"
-          >
-            {t("enterPinInstead")}
-          </button>
-        )}
+        {/* Refusing permission must never dead-end the rider. */}
+        <button
+          type="button"
+          onClick={() => commit({})}
+          className="mt-6 self-start text-sm font-medium text-primary underline underline-offset-4"
+        >
+          {t("skipForNow")}
+        </button>
       </div>
     </div>
   );

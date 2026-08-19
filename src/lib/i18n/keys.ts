@@ -4694,6 +4694,12 @@ export const COPY = {
     te: "మా టీమ్ కొన్ని నిమిషాల్లో చెక్ చేస్తుంది. మీ ఫోటోలు DriveX తో సురక్షితంగా ఉంటాయి.",
     kn: "ನಮ್ಮ ಟೀಮ್ ಕೆಲವೇ ನಿಮಿಷಗಳಲ್ಲಿ ಪರಿಶೀಲಿಸುತ್ತದೆ. ನಿಮ್ಮ ಫೋಟೋಗಳು DriveX ಜೊತೆ ಸುರಕ್ಷಿತವಾಗಿರುತ್ತವೆ.",
     hi: "हमारी टीम कुछ मिनट में चेक करेगी. आपके फोटो DriveX के पास सुरक्षित रहेंगे.", en: "Our team checks it in a few minutes. Your photos stay safe with DriveX." },
+  photoZoomHint: { en: "Tap photo to zoom" },
+  nextLabel: { en: "Next" },
+  backLabel: { en: "Back" },
+  stepXofY: { en: "Step {index} of {total}" },
+  optionalTag: { en: "Optional" },
+  allDocsDone: { en: "All photos taken" },
 } as const;
 
 export type TKey = keyof typeof COPY;

@@ -1,7 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { MapPin, Navigation, Clock, Sparkles, ChevronRight } from "lucide-react";
+import {
+  MapPin,
+  Navigation,
+  Clock,
+  Sparkles,
+  ChevronRight,
+  BatteryCharging,
+  Fuel,
+} from "lucide-react";
 
 import { AppShell } from "@/components/drivex/AppShell";
 import { PageLoader } from "@/components/drivex/PageLoader";
@@ -20,6 +28,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { modelTitle, rupees } from "@/lib/format";
+import { bikeImage } from "@/components/drivex/BikeCard";
+import { bikeSpec } from "@/lib/bike-specs";
 import { getCatalog, type CatalogVehicle } from "@/lib/catalog.functions";
 import { getAccountOverview } from "@/lib/account.functions";
 import { useRiderSession } from "@/hooks/useRiderSession";
@@ -80,6 +90,7 @@ function Discovery() {
   }
 
   const [modelId, setModelId] = useState<string | null>(null);
+  const [deckIndex, setDeckIndex] = useState(0);
   const [planId, setPlanId] = useState<string | null>(null);
   const [planSheetOpen, setPlanSheetOpen] = useState(false);
   const [showRto, setShowRto] = useState(false);
@@ -254,7 +265,44 @@ function Discovery() {
       </section>
 
       <section className="mt-4">
+        {/* All bikes as icons, so a rider can jump straight to one without swiping. */}
+        {bikes.length > 1 && (
+          <div className="mb-3 flex items-center justify-center gap-3">
+            {bikes.map((row, position) => {
+              const electric = bikeSpec(row.model).isElectric;
+              return (
+                <button
+                  key={row.model.id}
+                  type="button"
+                  aria-label={modelTitle(row.model.brand, row.model.name)}
+                  onClick={() => setDeckIndex(position)}
+                  className={
+                    "relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 transition-all " +
+                    (position === deckIndex
+                      ? "border-primary scale-105"
+                      : "border-border opacity-70")
+                  }
+                >
+                  <img
+                    src={bikeImage(row.model.name)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                  <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-tl-lg bg-background/85 text-primary">
+                    {electric ? (
+                      <BatteryCharging className="h-3 w-3" />
+                    ) : (
+                      <Fuel className="h-3 w-3" />
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         <BikeDeck
+          index={deckIndex}
+          onIndexChange={setDeckIndex}
           items={bikes.map((row) => ({ key: row.model.id }))}
           renderItem={(position) => {
             const row = bikes[position];
@@ -265,7 +313,6 @@ function Discovery() {
                 vehicle={row.vehicle}
                 fromAmount={row.cheapest ? Math.round(planDayRate(row.cheapest)) : null}
                 fromPeriod={null}
-                unitsReady={row.units}
                 distance={row.hub?.distance ?? null}
                 hubLocality={row.hub?.locality ?? null}
                 badges={badges[row.model.name] ?? []}

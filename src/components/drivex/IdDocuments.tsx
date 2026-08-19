@@ -1,10 +1,22 @@
-import { Fingerprint, ShieldCheck, Sparkles } from "lucide-react";
+import { useState } from "react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Fingerprint,
+  IdCard,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
 import { CaptureField } from "@/components/drivex/CaptureField";
 import { CallDriveXButton, TrustPanel } from "@/components/drivex/Blocks";
+import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { EligibilityMethod } from "@/lib/eligibility";
+import type { KycSlot } from "@/lib/kyc-upload";
 
 export type IdDocState = {
   aadhaarFrontPath: string | null;
@@ -22,7 +34,10 @@ export const EMPTY_ID_DOCS: IdDocState = {
   panPath: null,
 };
 
-/** Aadhaar, Driving Licence and PAN — the ID set an eligibility check needs. */
+/**
+ * Aadhaar, Driving Licence and PAN — one document per screen, so the rider
+ * only ever sees a single thing to do before tapping Next.
+ */
 export function IdDocumentFields({
   bookingId,
   docs,
@@ -33,6 +48,65 @@ export function IdDocumentFields({
   onChange: (next: Partial<IdDocState>) => void;
 }) {
   const { t } = useLanguage();
+  const [step, setStep] = useState(0);
+
+  const steps: {
+    slot: KycSlot;
+    icon: typeof IdCard;
+    label: string;
+    hint: string;
+    value: string | null;
+    optional?: boolean;
+    set: (path: string | null) => void;
+  }[] = [
+    {
+      slot: "aadhaar-front",
+      icon: IdCard,
+      label: t("aadhaarFrontLabel"),
+      hint: t("aadhaarFrontHint"),
+      value: docs.aadhaarFrontPath,
+      set: (path) => onChange({ aadhaarFrontPath: path }),
+    },
+    {
+      slot: "aadhaar-back",
+      icon: IdCard,
+      label: t("aadhaarBackLabel"),
+      hint: t("aadhaarBackHint"),
+      value: docs.aadhaarBackPath,
+      set: (path) => onChange({ aadhaarBackPath: path }),
+    },
+    {
+      slot: "dl-front",
+      icon: CreditCard,
+      label: t("dlFrontLabel"),
+      hint: t("dlFrontHint"),
+      value: docs.dlFrontPath,
+      set: (path) => onChange({ dlFrontPath: path }),
+    },
+    {
+      slot: "dl-back",
+      icon: CreditCard,
+      label: t("dlBackLabel"),
+      hint: t("dlBackHint"),
+      value: docs.dlBackPath,
+      set: (path) => onChange({ dlBackPath: path }),
+    },
+    {
+      slot: "pan",
+      icon: Fingerprint,
+      label: t("panLabel"),
+      hint: t("panHint"),
+      value: docs.panPath,
+      optional: true,
+      set: (path) => onChange({ panPath: path }),
+    },
+  ];
+
+  const total = steps.length;
+  const current = steps[Math.min(step, total - 1)]!;
+  const last = step >= total - 1;
+  const canGoOn = Boolean(current.value) || Boolean(current.optional);
+
   return (
     <div className="space-y-3">
       {/* Trust first: what, why, what next — three short lines before any ask. */}
@@ -43,48 +117,78 @@ export function IdDocumentFields({
           { title: t("idTrustNextTitle"), body: t("idTrustNextBody") },
         ]}
       />
-      <div className="grid gap-3 sm:grid-cols-2">
-      <CaptureField
-        {...(bookingId ? { bookingId } : {})}
-        slot="aadhaar-front"
-        label={t("aadhaarFrontLabel")}
-        hint={t("aadhaarFrontHint")}
-        value={docs.aadhaarFrontPath}
-        onChange={(path) => onChange({ aadhaarFrontPath: path })}
-      />
-      <CaptureField
-        {...(bookingId ? { bookingId } : {})}
-        slot="aadhaar-back"
-        label={t("aadhaarBackLabel")}
-        hint={t("aadhaarBackHint")}
-        value={docs.aadhaarBackPath}
-        onChange={(path) => onChange({ aadhaarBackPath: path })}
-      />
-      <CaptureField
-        {...(bookingId ? { bookingId } : {})}
-        slot="dl-front"
-        label={t("dlFrontLabel")}
-        hint={t("dlFrontHint")}
-        value={docs.dlFrontPath}
-        onChange={(path) => onChange({ dlFrontPath: path })}
-      />
-      <CaptureField
-        {...(bookingId ? { bookingId } : {})}
-        slot="dl-back"
-        label={t("dlBackLabel")}
-        hint={t("dlBackHint")}
-        value={docs.dlBackPath}
-        onChange={(path) => onChange({ dlBackPath: path })}
-      />
-      <CaptureField
-        {...(bookingId ? { bookingId } : {})}
-        slot="pan"
-        label={t("panLabel")}
-        hint={t("panHint")}
-        value={docs.panPath}
-        onChange={(path) => onChange({ panPath: path })}
-      />
+
+      {/* Progress as icons: done, current, still to come. */}
+      <div className="flex items-center justify-center gap-2">
+        {steps.map((item, position) => {
+          const done = Boolean(item.value);
+          return (
+            <button
+              key={item.slot}
+              type="button"
+              aria-label={item.label}
+              onClick={() => setStep(position)}
+              className={cn(
+                "flex h-11 w-11 items-center justify-center rounded-xl border transition",
+                position === step
+                  ? "border-primary bg-primary/15 text-primary"
+                  : done
+                    ? "border-success/50 bg-success/10 text-success"
+                    : "border-border bg-card/60 text-muted-foreground",
+              )}
+            >
+              {done ? <Check className="h-5 w-5" /> : <item.icon className="h-5 w-5" />}
+            </button>
+          );
+        })}
       </div>
+
+      <p className="text-center text-[11px] text-muted-foreground">
+        {t("stepXofY", { index: step + 1, total })}
+        {current.optional ? ` · ${t("optionalTag")}` : ""}
+      </p>
+
+      {/* Exactly one document on screen at a time. */}
+      <CaptureField
+        key={current.slot}
+        {...(bookingId ? { bookingId } : {})}
+        slot={current.slot}
+        label={current.label}
+        hint={current.hint}
+        value={current.value}
+        onChange={current.set}
+      />
+
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="lg"
+          disabled={step === 0}
+          onClick={() => setStep((value) => Math.max(0, value - 1))}
+        >
+          <ChevronLeft className="mr-1 h-4 w-4" />
+          {t("backLabel")}
+        </Button>
+        {!last ? (
+          <Button
+            type="button"
+            size="lg"
+            className="ml-auto"
+            disabled={!canGoOn}
+            onClick={() => setStep((value) => Math.min(total - 1, value + 1))}
+          >
+            {t("nextLabel")}
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        ) : (
+          <span className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-success">
+            <Check className="h-4 w-4" />
+            {t("allDocsDone")}
+          </span>
+        )}
+      </div>
+
       <div className="flex items-center gap-3">
         <p className="text-[11px] text-muted-foreground">{t("callHelpNote")}</p>
         <CallDriveXButton className="ml-auto shrink-0" />

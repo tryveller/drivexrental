@@ -11,23 +11,36 @@ import { useLanguage } from "@/lib/i18n";
 export function BikeDeck({
   items,
   renderItem,
+  index: controlledIndex,
+  onIndexChange,
 }: {
   items: { key: string }[];
   renderItem: (index: number, isTop: boolean) => React.ReactNode;
+  /** Optional controlled position, so icons above the deck can jump to a bike. */
+  index?: number;
+  onIndexChange?: (next: number) => void;
 }) {
   const { t } = useLanguage();
-  const [index, setIndex] = useState(0);
+  const [innerIndex, setInnerIndex] = useState(0);
   const [dx, setDx] = useState(0);
   const startX = useRef<number | null>(null);
 
   const total = items.length;
+  const index = controlledIndex ?? innerIndex;
+
+  function setIndex(next: number) {
+    setInnerIndex(next);
+    onIndexChange?.(next);
+  }
+
   useEffect(() => {
     if (index > total - 1) setIndex(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, total]);
 
   function move(step: number) {
     if (total < 2) return;
-    setIndex((value) => (value + step + total) % total);
+    setIndex((index + step + total) % total);
   }
 
   function onPointerDown(event: React.PointerEvent) {
