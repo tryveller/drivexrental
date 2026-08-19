@@ -55,7 +55,6 @@ export function BikeCard({
   vehicle,
   fromAmount,
   fromPeriod,
-  unitsReady,
   distance,
   hubLocality,
   badges,
@@ -66,7 +65,6 @@ export function BikeCard({
   vehicle: CatalogVehicle;
   fromAmount: number | null;
   fromPeriod: string | null;
-  unitsReady?: number;
   distance?: number | null;
   hubLocality?: string | null;
   placeLabel?: string;
