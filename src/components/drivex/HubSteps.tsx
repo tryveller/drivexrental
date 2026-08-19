@@ -475,6 +475,7 @@ export function PaymentStep({
 export function AgreementStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
   const { t } = useLanguage();
   const [read, setRead] = useState(false);
+  const [nudge, setNudge] = useState(false);
 
   return (
     <StepCard
@@ -489,28 +490,24 @@ export function AgreementStep({ bookingId, onDone }: { bookingId: string; onDone
             <p className="mt-2">{t("agreementP3")}</p>
             <p className="mt-2">{t("agreementP4")}</p>
           </div>
-          <label className="flex items-start gap-2 text-xs text-muted-foreground">
-            <Checkbox
-              checked={read}
-              onCheckedChange={(value) => setRead(value === true)}
-              className="mt-0.5"
-            />
-            <span>{t("agreementAcceptCheck")}</span>
-          </label>
+          <ConsentRow checked={read} onChange={setRead} highlight={nudge}>
+            {t("agreementAcceptCheck")}
+          </ConsentRow>
         </div>
       }
       action={
-        read ? (
-          <ActionButton
-            label={t("acceptContinue")}
-            run={() => acceptAgreement({ data: { bookingId } })}
-            onDone={onDone}
-          />
-        ) : (
-          <Button disabled className="w-full sm:w-auto">
-            {t("acceptContinue")}
-          </Button>
-        )
+        <ActionButton
+          label={t("acceptContinue")}
+          run={() => acceptAgreement({ data: { bookingId } })}
+          onDone={onDone}
+          guard={() => {
+            if (read) return true;
+            setNudge(true);
+            window.setTimeout(() => setNudge(false), 1000);
+            toast.error(t("consentRequired"));
+            return false;
+          }}
+        />
       }
     />
   );
