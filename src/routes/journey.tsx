@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
   Bike,
@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/drivex/AppShell";
+import { ConsentRow } from "@/components/drivex/ConsentRow";
 import { PageLoader } from "@/components/drivex/PageLoader";
 import {
   EMPTY_ID_DOCS,
