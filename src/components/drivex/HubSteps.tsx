@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { CaptureField } from "@/components/drivex/CaptureField";
 import { ConsentRow } from "@/components/drivex/ConsentRow";
 import { HelmetPicker } from "@/components/drivex/HelmetPicker";
