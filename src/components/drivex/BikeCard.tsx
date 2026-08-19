@@ -1,5 +1,20 @@
-import { BatteryCharging, Fuel, Gauge, MapPin, Navigation, Package, Power, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
+import { useState } from "react";
+import {
+  BatteryCharging,
+  Fuel,
+  Gauge,
+  Maximize2,
+  MapPin,
+  Navigation,
+  Package,
+  Power,
+  ShieldCheck,
+  Sparkles,
+  Wrench,
+  Zap,
+} from "lucide-react";
 import type { CatalogModel, CatalogVehicle } from "@/lib/catalog.functions";
+import { PhotoZoom } from "@/components/drivex/PhotoZoom";
 import { computeConditionScore } from "@/lib/pricing";
 import { bikeSpec } from "@/lib/bike-specs";
 import { modelTitle, rupees, shortDate } from "@/lib/format";
@@ -62,13 +77,10 @@ export function BikeCard({
   const condition = computeConditionScore(vehicle);
   const spec = bikeSpec(model);
   const { t } = useLanguage();
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const title = modelTitle(model.brand, model.name);
 
   const specs = [
-    {
-      icon: spec.isElectric ? BatteryCharging : Fuel,
-      label: t("fuelLabel"),
-      value: spec.isElectric ? t("fuelElectric") : t("fuelPetrol"),
-    },
     {
       icon: Fuel,
       label: spec.mileageKmpl ? t("specMileage") : t("specRange"),
@@ -98,6 +110,7 @@ export function BikeCard({
   ];
 
   return (
+    <>
     <button
       type="button"
       onClick={onSelect}
@@ -113,14 +126,36 @@ export function BikeCard({
       }}
     >
       <div className="relative shrink-0">
-        <img
-          src={bikeImage(model.name)}
-          alt={modelTitle(model.brand, model.name)}
-          width={1024}
-          height={768}
-          loading="lazy"
-          className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-        />
+        {/* Tapping the photo opens it full screen with zoom, not the plan sheet. */}
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label={t("photoZoomHint")}
+          onClick={(event) => {
+            event.stopPropagation();
+            setPhotoOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.stopPropagation();
+              event.preventDefault();
+              setPhotoOpen(true);
+            }
+          }}
+          className="block"
+        >
+          <img
+            src={bikeImage(model.name)}
+            alt={title}
+            width={1024}
+            height={768}
+            loading="lazy"
+            className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          />
+          <span className="absolute right-3 bottom-12 flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-primary backdrop-blur">
+            <Maximize2 className="h-4 w-4" />
+          </span>
+        </span>
         <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">
           <ShieldCheck className="h-3 w-3" />
@@ -134,7 +169,25 @@ export function BikeCard({
           </span>
         )}
         <div className="absolute inset-x-3 bottom-2 flex items-end justify-between gap-2">
-          <span className="text-sm font-semibold">{modelTitle(model.brand, model.name)}</span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold">{title}</span>
+            {/* Fuel type is the first thing a rider checks, so it is a chip, not a row. */}
+            <span
+              className={cn(
+                "mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide",
+                spec.isElectric
+                  ? "bg-success text-success-foreground"
+                  : "bg-primary text-primary-foreground",
+              )}
+            >
+              {spec.isElectric ? (
+                <BatteryCharging className="h-3 w-3" />
+              ) : (
+                <Fuel className="h-3 w-3" />
+              )}
+              {spec.isElectric ? t("fuelElectric") : t("fuelPetrol")}
+            </span>
+          </span>
           {fromAmount !== null && (
             <span className="text-right text-sm font-semibold text-primary">
               {rupees(fromAmount)}
@@ -193,10 +246,14 @@ export function BikeCard({
         ))}
       </dl>
 
-      <div className="flex shrink-0 items-center justify-between gap-2 border-t border-primary/20 px-3 py-2 text-[10px] text-muted-foreground">
-        <span className="truncate font-medium text-foreground/80">{t(spec.bestForKey as never)}</span>
-        {unitsReady ? <span className="shrink-0">{t("unitsReady", { count: unitsReady })}</span> : null}
-      </div>
     </button>
+
+      <PhotoZoom
+        open={photoOpen}
+        onOpenChange={setPhotoOpen}
+        src={bikeImage(model.name)}
+        alt={title}
+      />
+    </>
   );
 }
