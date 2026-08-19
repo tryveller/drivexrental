@@ -1,6 +1,7 @@
 import { Fingerprint, ShieldCheck, Sparkles } from "lucide-react";
 
 import { CaptureField } from "@/components/drivex/CaptureField";
+import { CallDriveXButton, TrustPanel } from "@/components/drivex/Blocks";
 import { useLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { EligibilityMethod } from "@/lib/eligibility";
@@ -33,7 +34,16 @@ export function IdDocumentFields({
 }) {
   const { t } = useLanguage();
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="space-y-3">
+      {/* Trust first: what, why, what next — three short lines before any ask. */}
+      <TrustPanel
+        items={[
+          { title: t("idTrustWhatTitle"), body: t("idTrustWhatBody") },
+          { title: t("idTrustWhyTitle"), body: t("idTrustWhyBody") },
+          { title: t("idTrustNextTitle"), body: t("idTrustNextBody") },
+        ]}
+      />
+      <div className="grid gap-3 sm:grid-cols-2">
       <CaptureField
         {...(bookingId ? { bookingId } : {})}
         slot="aadhaar-front"
@@ -74,6 +84,11 @@ export function IdDocumentFields({
         value={docs.panPath}
         onChange={(path) => onChange({ panPath: path })}
       />
+      </div>
+      <div className="flex items-center gap-3">
+        <p className="text-[11px] text-muted-foreground">{t("callHelpNote")}</p>
+        <CallDriveXButton className="ml-auto shrink-0" />
+      </div>
     </div>
   );
 }
@@ -94,6 +109,22 @@ export function IdMethodPicker({
   const { t } = useLanguage();
   return (
     <div className="grid gap-3 sm:grid-cols-2">
+      {/* Clicking a picture is the familiar option, so it comes first. */}
+      <button
+        type="button"
+        onClick={() => onMethod("UPLOAD")}
+        className={cn(
+          "rounded-2xl border p-4 text-left transition",
+          method === "UPLOAD" ? "border-primary bg-primary/10" : "border-border bg-card/60",
+        )}
+      >
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <Fingerprint className="h-4 w-4 text-primary" />
+          {t("uploadIdsTitle")}
+        </span>
+        <span className="mt-1 block text-xs text-muted-foreground">{t("uploadIdsHint")}</span>
+      </button>
+
       <button
         type="button"
         disabled={!digilockerReady}
@@ -117,21 +148,6 @@ export function IdMethodPicker({
         </span>
         <span className="mt-1 block text-xs text-muted-foreground">{t("digilockerHint")}</span>
       </button>
-
-      <button
-        type="button"
-        onClick={() => onMethod("UPLOAD")}
-        className={cn(
-          "rounded-2xl border p-4 text-left transition",
-          method === "UPLOAD" ? "border-primary bg-primary/10" : "border-border bg-card/60",
-        )}
-      >
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <Fingerprint className="h-4 w-4 text-primary" />
-          {t("uploadIdsTitle")}
-        </span>
-        <span className="mt-1 block text-xs text-muted-foreground">{t("uploadIdsHint")}</span>
-      </button>
     </div>
   );
 }
@@ -146,6 +162,7 @@ export function PendingConfirmation() {
         {t("eligibilityPendingTitle")}
       </span>
       <p className="mt-1 text-xs text-muted-foreground">{t("eligibilityPendingBody")}</p>
+      <CallDriveXButton className="mt-3" />
     </div>
   );
 }
