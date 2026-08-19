@@ -468,6 +468,8 @@ function ReserveStep({
   // Verification is optional before reserving, so the rider must knowingly
   // accept that the ₹199 hold is not returned if the hub check does not pass.
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [nudge, setNudge] = useState(false);
+  const consentRef = useRef<HTMLButtonElement>(null);
 
   return (
     <StepCard
@@ -494,14 +496,16 @@ function ReserveStep({
               <span>{t("hubVerificationRisk")}</span>
             </p>
           )}
-          <label className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
-            <Checkbox
+          <div className="mt-3">
+            <ConsentRow
+              ref={consentRef}
               checked={acceptedTerms}
-              onCheckedChange={(value) => setAcceptedTerms(value === true)}
-              className="mt-0.5"
-            />
-            <span>{t("reservationTermsConsent")}</span>
-          </label>
+              onChange={setAcceptedTerms}
+              highlight={nudge}
+            >
+              {t("reservationTermsConsent")}
+            </ConsentRow>
+          </div>
         </>
       }
       action={
@@ -510,11 +514,15 @@ function ReserveStep({
             label={t("payAndReserve", { amount: rupees(reservationAmount) })}
             run={() => payReservation({ data: { bookingId, acceptedTerms } })}
             onDone={onDone}
-            disabled={!acceptedTerms}
+            guard={() => {
+              if (acceptedTerms) return true;
+              setNudge(true);
+              window.setTimeout(() => setNudge(false), 1000);
+              consentRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+              toast.error(t("acceptTermsRequired"));
+              return false;
+            }}
           />
-          {!acceptedTerms && (
-            <p className="text-xs text-muted-foreground">{t("acceptTermsRequired")}</p>
-          )}
         </div>
       }
     />
