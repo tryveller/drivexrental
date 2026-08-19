@@ -47,7 +47,7 @@ export function PhotoZoom({
         event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1);
       const current = stateRef.current;
       const next = clamp(current.zoom * Math.exp(-dy * 0.002), MIN, MAX);
-      const rect = el.getBoundingClientRect();
+      const rect = el!.getBoundingClientRect();
       const px = event.clientX - rect.left;
       const py = event.clientY - rect.top;
       const k = next / current.zoom;
@@ -82,10 +82,7 @@ export function PhotoZoom({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className="max-w-3xl overflow-hidden border-primary/30 bg-background/95 p-0"
-      >
+      <DialogContent className="max-w-3xl overflow-hidden border-primary/30 bg-background/95 p-0">
         <DialogTitle className="sr-only">{alt}</DialogTitle>
         <div
           ref={boxRef}
