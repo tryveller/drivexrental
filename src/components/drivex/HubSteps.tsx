@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CaptureField } from "@/components/drivex/CaptureField";
+import { ConsentRow } from "@/components/drivex/ConsentRow";
 import { HelmetPicker } from "@/components/drivex/HelmetPicker";
 import {
   acceptAgreement,
@@ -141,6 +142,13 @@ export function HubKycStep({
   const [index, setIndex] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [nudge, setNudge] = useState(false);
+
+  function askForConsent() {
+    setNudge(true);
+    window.setTimeout(() => setNudge(false), 1000);
+    toast.error(t("consentRequired"));
+  }
 
   useEffect(() => {
     if (!saved.data || hydrated) return;
@@ -269,14 +277,13 @@ export function HubKycStep({
             <p className="text-xs font-medium text-primary">{t("savedEarlier")}</p>
           )}
           {isLast && (
-            <label className="flex items-start gap-2 rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={consent}
-                onCheckedChange={(next) => setConsent(next === true)}
-                className="mt-0.5"
-              />
-              <span>{t("documentConsent")}</span>
-            </label>
+            <ConsentRow
+              checked={consent}
+              onChange={setConsent}
+              highlight={nudge}
+            >
+              {t("documentConsent")}
+            </ConsentRow>
           )}
           <CaptureField
             key={step.slot}
@@ -312,8 +319,14 @@ export function HubKycStep({
           ) : (
             <Button
               className="w-full sm:flex-1"
-              onClick={() => submit.mutate()}
-              disabled={submit.isPending || !requiredDone || !consent}
+              onClick={() => {
+                if (!consent) {
+                  askForConsent();
+                  return;
+                }
+                submit.mutate();
+              }}
+              disabled={submit.isPending || !requiredDone}
             >
               {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("submitDocuments")}
@@ -327,9 +340,6 @@ export function HubKycStep({
             >
               {t("skipForNow")}
             </Button>
-          )}
-          {isLast && !consent && (
-            <p className="self-center text-xs text-muted-foreground">{t("consentRequired")}</p>
           )}
         </div>
       }
