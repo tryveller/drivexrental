@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { Languages } from "lucide-react";
+import { Languages, Phone } from "lucide-react";
 import { toast } from "sonner";
-import { DRIVEX_WHATSAPP } from "@/lib/format";
+import { DRIVEX_SUPPORT_PHONE, DRIVEX_WHATSAPP } from "@/lib/format";
 import { AutoBackdrop } from "@/components/drivex/AutoBackdrop";
 import { AccountMenu } from "@/components/drivex/AccountMenu";
 import { DriveXLogo } from "@/components/drivex/DriveXLogo";
@@ -70,6 +70,15 @@ export function AppShell({
           </Link>
           <div className="flex items-center gap-2">
             <LanguagePicker />
+            {/* A person to call, always one tap away. */}
+            <a
+              href={`tel:${DRIVEX_SUPPORT_PHONE}`}
+              className="flex items-center gap-1.5 rounded-full border border-primary/50 bg-primary/10 px-2.5 py-1.5 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
+              aria-label={t("callDrivexLabel")}
+            >
+              <Phone className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("callDrivexLabel")}</span>
+            </a>
             <a
               href={`https://wa.me/${DRIVEX_WHATSAPP}`}
               target="_blank"

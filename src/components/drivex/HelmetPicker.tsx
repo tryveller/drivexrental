@@ -1,5 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 
+import { BenefitBlock } from "@/components/drivex/Blocks";
+import helmetImage from "@/assets/helmet.jpg";
 import {
   helmetCharge,
   type AddonRates,
@@ -35,7 +37,7 @@ export function HelmetPicker({
   const rentAmount = helmetCharge(plan, duration, "RENT", rates);
 
   const options: { mode: HelmetMode; label: string; hint: string }[] = [
-    { mode: "NONE", label: t("helmetNone"), hint: t("helmetIncluded") },
+    { mode: "NONE", label: t("helmetNone"), hint: "" },
     {
       mode: "RENT",
       label: t("helmetRentOption"),
@@ -51,7 +53,17 @@ export function HelmetPicker({
   ];
 
   return (
-    <div className="rounded-2xl border border-primary/30 bg-card/70 p-3">
+    <div className="space-y-2">
+      {/* The free helmet is a benefit, not a choice — it never sits inside the
+          paid options, and it uses a real photo so it cannot read as "wear a
+          helmet" or "put a helmet on the bike". */}
+      <BenefitBlock
+        image={helmetImage}
+        title={t("freeWithBikeTitle")}
+        body={t("helmetIncludedNote")}
+      />
+
+      <div className="rounded-2xl border border-primary/30 bg-card/70 p-3">
       <p className="flex items-center gap-2 text-sm font-semibold">
         <ShieldCheck className="h-4 w-4 text-primary" />
         {t("helmetExtraTitle")}
@@ -73,9 +85,11 @@ export function HelmetPicker({
             )}
           >
             <span className="block text-xs font-semibold">{option.label}</span>
-            <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">
-              {option.hint}
-            </span>
+            {option.hint ? (
+              <span className="mt-0.5 block text-[10px] leading-tight text-muted-foreground">
+                {option.hint}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -92,7 +106,7 @@ export function HelmetPicker({
           <span className="font-semibold">{rupees(rates.helmetBuyPrice)}</span>
         </p>
       )}
-      <p className="mt-2 text-[11px] text-muted-foreground">{t("helmetIncludedNote")}</p>
+      </div>
     </div>
   );
 }

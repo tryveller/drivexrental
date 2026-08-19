@@ -1,4 +1,4 @@
-import { Fuel, Gauge, MapPin, Navigation, Package, Power, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
+import { BatteryCharging, Fuel, Gauge, MapPin, Navigation, Package, Power, ShieldCheck, Sparkles, Wrench, Zap } from "lucide-react";
 import type { CatalogModel, CatalogVehicle } from "@/lib/catalog.functions";
 import { computeConditionScore } from "@/lib/pricing";
 import { bikeSpec } from "@/lib/bike-specs";
@@ -64,6 +64,11 @@ export function BikeCard({
   const { t } = useLanguage();
 
   const specs = [
+    {
+      icon: spec.isElectric ? BatteryCharging : Fuel,
+      label: t("fuelLabel"),
+      value: spec.isElectric ? t("fuelElectric") : t("fuelPetrol"),
+    },
     {
       icon: Fuel,
       label: spec.mileageKmpl ? t("specMileage") : t("specRange"),
