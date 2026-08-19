@@ -223,3 +223,14 @@
   --primary-foreground: oklch(0.98 0.012 75);
   --ring: oklch(0.55 0.14 44);
 }
+
+/* Flashes a consent row when a rider tries to continue without ticking it. */
+@keyframes consent-nudge {
+  0%, 100% { transform: translateX(0); box-shadow: 0 0 0 0 var(--primary); }
+  20% { transform: translateX(-4px); box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent); }
+  60% { transform: translateX(4px); box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 35%, transparent); }
+}
+
+@utility animate-consent-nudge {
+  animation: consent-nudge 0.45s ease-in-out 2;
+}

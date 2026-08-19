@@ -12,8 +12,8 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { CaptureField } from "@/components/drivex/CaptureField";
+import { ConsentRow } from "@/components/drivex/ConsentRow";
 import { HelmetPicker } from "@/components/drivex/HelmetPicker";
 import {
   acceptAgreement,
@@ -68,12 +68,15 @@ export function ActionButton<T>({
   onDone,
   variant,
   disabled,
+  guard,
 }: {
   label: string;
   run: () => Promise<T>;
   onDone: () => void | Promise<void>;
   variant?: "outline";
   disabled?: boolean;
+  /** Return false to block the action (e.g. consent not ticked yet). */
+  guard?: () => boolean;
 }) {
   const { t } = useLanguage();
   const mutation = useMutation({
@@ -89,7 +92,10 @@ export function ActionButton<T>({
     <Button
       variant={variant}
       className="w-full sm:w-auto"
-      onClick={() => mutation.mutate()}
+      onClick={() => {
+        if (guard && !guard()) return;
+        mutation.mutate();
+      }}
       disabled={mutation.isPending || disabled}
     >
       {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -135,6 +141,13 @@ export function HubKycStep({
   const [index, setIndex] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [nudge, setNudge] = useState(false);
+
+  function askForConsent() {
+    setNudge(true);
+    window.setTimeout(() => setNudge(false), 1000);
+    toast.error(t("consentRequired"));
+  }
 
   useEffect(() => {
     if (!saved.data || hydrated) return;
@@ -263,14 +276,13 @@ export function HubKycStep({
             <p className="text-xs font-medium text-primary">{t("savedEarlier")}</p>
           )}
           {isLast && (
-            <label className="flex items-start gap-2 rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-              <Checkbox
-                checked={consent}
-                onCheckedChange={(next) => setConsent(next === true)}
-                className="mt-0.5"
-              />
-              <span>{t("documentConsent")}</span>
-            </label>
+            <ConsentRow
+              checked={consent}
+              onChange={setConsent}
+              highlight={nudge}
+            >
+              {t("documentConsent")}
+            </ConsentRow>
           )}
           <CaptureField
             key={step.slot}
@@ -306,8 +318,14 @@ export function HubKycStep({
           ) : (
             <Button
               className="w-full sm:flex-1"
-              onClick={() => submit.mutate()}
-              disabled={submit.isPending || !requiredDone || !consent}
+              onClick={() => {
+                if (!consent) {
+                  askForConsent();
+                  return;
+                }
+                submit.mutate();
+              }}
+              disabled={submit.isPending || !requiredDone}
             >
               {submit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("submitDocuments")}
@@ -321,9 +339,6 @@ export function HubKycStep({
             >
               {t("skipForNow")}
             </Button>
-          )}
-          {isLast && !consent && (
-            <p className="self-center text-xs text-muted-foreground">{t("consentRequired")}</p>
           )}
         </div>
       }
@@ -459,6 +474,7 @@ export function PaymentStep({
 export function AgreementStep({ bookingId, onDone }: { bookingId: string; onDone: () => void }) {
   const { t } = useLanguage();
   const [read, setRead] = useState(false);
+  const [nudge, setNudge] = useState(false);
 
   return (
     <StepCard
@@ -473,28 +489,24 @@ export function AgreementStep({ bookingId, onDone }: { bookingId: string; onDone
             <p className="mt-2">{t("agreementP3")}</p>
             <p className="mt-2">{t("agreementP4")}</p>
           </div>
-          <label className="flex items-start gap-2 text-xs text-muted-foreground">
-            <Checkbox
-              checked={read}
-              onCheckedChange={(value) => setRead(value === true)}
-              className="mt-0.5"
-            />
-            <span>{t("agreementAcceptCheck")}</span>
-          </label>
+          <ConsentRow checked={read} onChange={setRead} highlight={nudge}>
+            {t("agreementAcceptCheck")}
+          </ConsentRow>
         </div>
       }
       action={
-        read ? (
-          <ActionButton
-            label={t("acceptContinue")}
-            run={() => acceptAgreement({ data: { bookingId } })}
-            onDone={onDone}
-          />
-        ) : (
-          <Button disabled className="w-full sm:w-auto">
-            {t("acceptContinue")}
-          </Button>
-        )
+        <ActionButton
+          label={t("acceptContinue")}
+          run={() => acceptAgreement({ data: { bookingId } })}
+          onDone={onDone}
+          guard={() => {
+            if (read) return true;
+            setNudge(true);
+            window.setTimeout(() => setNudge(false), 1000);
+            toast.error(t("consentRequired"));
+            return false;
+          }}
+        />
       }
     />
   );
