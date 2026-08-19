@@ -18,6 +18,8 @@ export type SpecSource = {
 export type BikeSpec = {
   /** Fuel economy in kmpl, or null for electric models. */
   mileageKmpl: number | null;
+  /** Petrol or electric — riders look for this first, so it is never implied. */
+  isElectric: boolean;
   /** Real-world range for electric models. */
   rangeKm: number | null;
   topSpeedKmph: number;
@@ -35,6 +37,7 @@ export type BikeSpec = {
 
 const FALLBACK: BikeSpec = {
   mileageKmpl: 60,
+  isElectric: false,
   rangeKm: null,
   topSpeedKmph: 80,
   storageLitres: 0,
@@ -49,6 +52,7 @@ export function bikeSpec(model: SpecSource): BikeSpec {
   const hasRange = model.range_km !== null && model.range_km !== undefined;
   return {
     mileageKmpl: hasRange ? null : (model.mileage_kmpl ?? FALLBACK.mileageKmpl),
+    isElectric: hasRange,
     rangeKm: model.range_km ?? null,
     topSpeedKmph: model.top_speed_kmph ?? FALLBACK.topSpeedKmph,
     storageLitres: model.storage_litres ?? FALLBACK.storageLitres,
