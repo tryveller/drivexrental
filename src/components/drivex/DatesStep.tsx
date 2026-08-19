@@ -18,6 +18,7 @@ import { rupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useLanguage, type TKey } from "@/lib/i18n";
 import { HelmetPicker } from "./HelmetPicker";
+import { Bilingual, InfoNote } from "@/components/drivex/Blocks";
 
 export type RideDates = {
   pickupOn: string;
@@ -168,7 +169,13 @@ export function DatesStep({
           onChange={onHelmetChange}
         />
         <div className="rounded-2xl border border-primary/40 bg-primary/10 p-4">
-          <div className="flex items-center justify-between text-sm">
+          {/* The one number the rider pays right now, before any breakdown. */}
+          <div className="rounded-2xl bg-primary px-4 py-3 text-primary-foreground">
+            <Bilingual k="payNowBigLabel" className="text-xs font-medium opacity-90" />
+            <p className="mt-1 text-3xl font-bold leading-none">{rupees(quote.payNow)}</p>
+          </div>
+
+          <div className="mt-3 flex items-center justify-between text-sm">
             <span className="text-muted-foreground">{t("daysBilledLabel")}</span>
             <span className="font-medium">
               {duration.extraHours > 0
@@ -192,39 +199,30 @@ export function DatesStep({
             </div>
             {quote.depositAmount > 0 && (
               <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">{t("depositRefundableLabel")}</dt>
+                <dt className="text-muted-foreground">
+                  {t("depositRefundableLabel")}
+                  <span className="block text-[11px] text-success">{t("depositBackShort")}</span>
+                </dt>
                 <dd className="font-medium">{rupees(quote.depositAmount)}</dd>
               </div>
             )}
+            <div className="flex justify-between gap-4 border-t border-primary/20 pt-1.5">
+              <dt className="text-muted-foreground">{t("payAtHubLabel")}</dt>
+              <dd className="font-medium">{rupees(quote.amountAtHub)}</dd>
+            </div>
           </dl>
 
-          <div className="mt-3 flex items-baseline justify-between border-t border-primary/30 pt-3">
-            <span className="text-sm font-semibold">{t("totalToPay")}</span>
-            <span className="text-xl font-semibold">{rupees(quote.totalInitialLiability)}</span>
-          </div>
           {quote.perDay !== null && (
-            <p className="mt-1 text-right text-xs text-primary">
+            <p className="mt-2 text-xs text-primary">
               {t("perDayApprox", { amount: rupees(quote.perDay) })}
             </p>
           )}
-          {quote.depositAmount > 0 && (
-            <p className="mt-2 text-[11px] text-muted-foreground">{t("depositRefundableNote")}</p>
-          )}
 
-          <p className="mt-3 rounded-xl bg-background/70 px-3 py-2 text-[11px] text-muted-foreground">
-            {t("reserveNote", {
-              reserve: rupees(quote.payNow),
-              total: rupees(quote.totalInitialLiability),
-              remaining: rupees(quote.amountAtHub),
-            })}
-          </p>
-          {duration.extraHours > 0 && (
-            <p className="mt-2 text-[11px] text-muted-foreground">{t("hoursProrataNote")}</p>
-          )}
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            {t("lateReturnNote", { amount: rupees(lateReturnFee(plan)) })}
-          </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{t("bikeReadyNote")}</p>
+          <div className="mt-3 space-y-1.5">
+            {duration.extraHours > 0 && <InfoNote>{t("hoursProrataNote")}</InfoNote>}
+            <InfoNote>{t("lateReturnNote", { amount: rupees(lateReturnFee(plan)) })}</InfoNote>
+            <InfoNote>{t("bikeReadyNote")}</InfoNote>
+          </div>
         </div>
         </>
       )}
