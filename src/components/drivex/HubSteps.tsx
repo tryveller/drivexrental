@@ -68,12 +68,15 @@ export function ActionButton<T>({
   onDone,
   variant,
   disabled,
+  guard,
 }: {
   label: string;
   run: () => Promise<T>;
   onDone: () => void | Promise<void>;
   variant?: "outline";
   disabled?: boolean;
+  /** Return false to block the action (e.g. consent not ticked yet). */
+  guard?: () => boolean;
 }) {
   const { t } = useLanguage();
   const mutation = useMutation({
@@ -89,7 +92,10 @@ export function ActionButton<T>({
     <Button
       variant={variant}
       className="w-full sm:w-auto"
-      onClick={() => mutation.mutate()}
+      onClick={() => {
+        if (guard && !guard()) return;
+        mutation.mutate();
+      }}
       disabled={mutation.isPending || disabled}
     >
       {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
