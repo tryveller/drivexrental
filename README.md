@@ -2,6 +2,10 @@
 
 DriveX Rental — Gig Rider App V1
 
+> **Build spec:** [SPEC.md](./SPEC.md) is the single source of truth for the app as built — design philosophy, every flow, all business rules, the full pricing maths, the data model, and a copy-pasteable rebuild prompt. This README keeps the original PRD.
+
+
+
 Product Requirements Document
 
 Product: DriveX Rental Rider App
